@@ -4,9 +4,9 @@
 | | |
 |---|---|
 | **Produk** | NORA — Network Oracle for Reliable Answers |
-| **Tipe** | SaaS — AI Research Engine untuk standar telekomunikasi (3GPP) |
+| **Tipe** | SaaS — Platform AI Research Engine multi-topik untuk standar telekomunikasi |
 | **Kolaborasi** | NOZ (Telecom Security Research) × PT Arah Karya Sinergi |
-| **Versi dokumen** | 0.1 (Draft) |
+| **Versi dokumen** | 0.2 (Draft) |
 | **Tanggal** | Juni 2026 |
 | **Disiapkan oleh** | Hermes Arah (ArahKarya) |
 | **Status** | Draft — menunggu review |
@@ -15,17 +15,20 @@
 
 ## 1. Ringkasan Eksekutif
 
-NORA adalah **AI Research Engine berbasis RAG** yang menjawab pertanyaan teknis seputar standar telekomunikasi 3GPP dengan jawaban **tergrounded pada spec resmi** — bukan halusinasi. Setiap jawaban disertai **skor keyakinan (confidence)** dan **referensi sumber** (nomor section spec).
+NORA adalah **platform AI Research Engine berbasis RAG** yang menjawab pertanyaan teknis seputar standar telekomunikasi dengan jawaban **tergrounded pada spec resmi** — bukan halusinasi. Setiap jawaban disertai **skor keyakinan (confidence)** dan **referensi sumber** (nomor section spec).
+
+NORA dirancang **multi-topik**: tiap **Topik** adalah knowledge base independen (mis. 3GPP TS 24.008, 3GPP TS 23.501, ITU-T, IEEE 802.x, GSMA) dengan metode RAG yang **identik**. User memilih Topik sebelum bertanya, dan sistem mengarahkan query ke knowledge base Topik tersebut. **Topik pertama** yang diimplementasi & terbukti adalah **3GPP TS 24.008** (reference implementation).
 
 Berbeda dengan chatbot LLM umum yang menjawab dari ingatan dan rawan ngarang, NORA memakai arsitektur **RAG + dual-model (Generator → Verifier) + validation layer**, diorkestrasi oleh **Hermes Agent** sebagai otak eksekusi.
 
-**Engine default:** API cloud via **9router (Claude Opus)**. **Mode lokal:** dapat di-swap ke **Ollama** tanpa mengubah arsitektur — privacy-first opsional.
+**Engine default:** API cloud via **9router (Claude Opus generator + Sonnet verifier)**. **Mode lokal:** dapat di-swap ke **Ollama** tanpa mengubah arsitektur — privacy-first opsional.
 
 ### Proposisi Nilai Inti
-1. **Anti-halusinasi** — jawaban wajib bersumber dari spec 3GPP resmi.
+1. **Anti-halusinasi** — jawaban wajib bersumber dari spec resmi.
 2. **Self-validating** — model kedua memverifikasi jawaban model pertama sebelum dikirim.
 3. **Auditable** — setiap jawaban punya confidence score + sumber yang bisa ditelusuri.
-4. **Engine-agnostic** — cloud (Opus) atau lokal (Ollama), satu arsitektur.
+4. **Multi-topik & extensible** — satu engine RAG, banyak knowledge base; nambah Topik baru tanpa ubah arsitektur.
+5. **Engine-agnostic** — cloud (Opus/Sonnet) atau lokal (Ollama), satu arsitektur.
 
 ---
 
@@ -41,7 +44,7 @@ Engineer telco harus membaca **ribuan halaman** spec 3GPP (mis. TS 24.008 ~600+ 
 LLM umum menjawab dari **parametric memory** → sering **halusinasi** pada detail teknis (nomor section, IE, prosedur). Untuk domain regulasi/standar, ini **tidak dapat diterima** — jawaban salah bisa berdampak pada desain jaringan.
 
 ### 2.3 Solusi
-NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan retrieval + sintesis + verifikasi. Sumber jawaban selalu spec asli, bukan ingatan model.
+NORA mengingesti **spec resmi** (per Topik) ke vector database, lalu menjawab dengan retrieval + sintesis + verifikasi. Sumber jawaban selalu spec asli, bukan ingatan model. Topik pertama yang diimplementasi adalah 3GPP TS 24.008; Topik lain (3GPP spec lain, ITU-T, IEEE, GSMA, dst.) menyusul dengan metode yang sama.
 
 ---
 
@@ -50,7 +53,7 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 ### 3.1 Tujuan Bisnis
 - **G1** — Menyediakan tool riset spec telco yang akurat & cepat untuk engineer.
 - **G2** — Menjadi showcase kapabilitas RAG-reliable kolab NOZ × ArahKarya.
-- **G3** — Arsitektur reusable yang bisa diperluas ke spec/domain telco lain.
+- **G3** — Arsitektur reusable **multi-topik**: satu engine RAG melayani banyak knowledge base standar telco, mudah ditambah Topik baru.
 
 ### 3.2 Sasaran Terukur (MVP)
 | ID | Sasaran | Target |
@@ -61,7 +64,7 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 | OBJ-4 | Hallucination guard | Jawaban tanpa dukungan konteks → ditolak/flag LOW CONFIDENCE |
 
 ### 3.3 Non-Tujuan (Out of Scope MVP)
-- Multi-domain (non-telco) — single-domain dulu.
+- **Domain non-telco** (mis. medis, hukum) — fokus standar telekomunikasi dulu. (Multi-**topik** dalam telco justru inti desain MVP.)
 - Fine-tuning model.
 - Real-time spec update otomatis (Fase lanjut via cron).
 - Mobile native app (web dulu).
@@ -79,6 +82,43 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 
 ### Persona Utama
 **"Network Engineer"** — paham telco, butuh jawaban cepat & akurat dari spec. Akses via dashboard web / chat. Tidak mau baca 600 halaman manual.
+
+---
+
+## 4A. Konsep Topik (Multi-Topic Knowledge Base)
+
+NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap knowledge base disebut **Topik**.
+
+### Definisi
+**Topik** = satu domain/spec standar telco yang punya knowledge base sendiri, collection vector sendiri, namun **berbagi metode RAG yang sama** (chunking section-aware → embed → retrieve → generate → verify → validate).
+
+### Struktur Topik
+| Atribut | Contoh (Topik pertama) | Keterangan |
+|---|---|---|
+| `id` | `3gpp-ts24008` | ID teknis unik |
+| `nama` | 3GPP TS 24.008 | Nama tampil ke user |
+| `deskripsi` | Mobile radio interface L3; MM/GMM/CC/SM | Ringkasan domain |
+| `collection` | `ts24008` | Nama collection ChromaDB |
+| `kb_dir` | `data/3gpp/24008/txt` | Lokasi knowledge base |
+| `status` | `live` | `live` / `indexing` / `planned` |
+
+### Topik Roadmap (ilustrasi)
+| Topik | Status | Catatan |
+|---|---|---|
+| **3GPP TS 24.008** | 🟢 **Live** (topik pertama, terbukti E2E) | NAS L3 — MM/GMM/CC/SM |
+| 3GPP TS 23.501 | ⚪ Planned | 5G System Architecture |
+| 3GPP TS 33.501 | ⚪ Planned | 5G Security |
+| ITU-T (seri Q/X) | ⚪ Planned | Signalling & data networks |
+| IEEE 802.x | ⚪ Planned | LAN/Wireless |
+| GSMA / O-RAN | ⚪ Planned | Operator & open RAN |
+
+### Alur Multi-Topik
+1. User **memilih Topik** (dropdown/menu) sebelum bertanya.
+2. Query diarahkan ke **collection** milik Topik tersebut.
+3. Pipeline RAG identik berjalan dalam scope Topik itu.
+4. Admin bisa **menambah Topik baru**: daftarkan metadata → ingest knowledge base → Topik siap dipakai. **Tanpa ubah kode engine.**
+
+> Nilai bisnis: satu codebase, banyak produk. Tiap Topik baru = penambahan pasar (segmen engineer berbeda) dengan biaya marginal rendah.
 
 ---
 
@@ -145,6 +185,16 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 | FR-SAAS-004 | Sistem SHOULD pakai feedback untuk perbaiki ranking retrieval & prompt | SHOULD |
 | FR-SAAS-005 | Sistem COULD dukung role (admin/engineer/viewer) | COULD |
 
+### 5.8 Topik (Multi-Topic Management)
+| ID | Requirement | Prioritas |
+|---|---|---|
+| FR-TOP-001 | Sistem MUST punya registry Topik (id, nama, deskripsi, collection, kb_dir, status) | MUST |
+| FR-TOP-002 | User MUST memilih Topik sebelum query; query MUST diarahkan ke collection Topik tsb | MUST |
+| FR-TOP-003 | Sistem MUST isolasi data antar-Topik (retrieval tidak bocor lintas-Topik) | MUST |
+| FR-TOP-004 | Admin MUST bisa menambah Topik baru (daftar metadata + ingest) tanpa ubah kode engine | MUST |
+| FR-TOP-005 | Sistem SHOULD tampilkan daftar Topik + status (live/indexing/planned) ke user | SHOULD |
+| FR-TOP-006 | Sistem COULD dukung query lintas-Topik (mis. cari di 3GPP + ITU-T sekaligus) | COULD |
+
 ---
 
 ## 6. Kebutuhan Non-Fungsional
@@ -189,9 +239,10 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 └─────────────────────────────────────────────────────────────┘
         ▲                                          ▲
         │ Cloudflare Tunnel (remote akses aman)    │
-        │                          Knowledge Base: 3GPP TS 24.008
-        │                          (257 versi .txt, chunked per section)
-   Network Engineer
+        │                          Knowledge Base (per Topik):
+        │                          Topik #1 = 3GPP TS 24.008 (257 versi .txt)
+        │                          + Topik lain (ChromaDB collection terpisah)
+   Network Engineer  ── pilih Topik → query ──►
 ```
 
 ### Data Flow (1 query)
@@ -226,7 +277,9 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 
 ---
 
-## 9. Knowledge Base (Status Saat Ini)
+## 9. Knowledge Base — Topik #1: 3GPP TS 24.008 (Status Saat Ini)
+
+> NORA multi-topik; berikut status **Topik pertama** (reference implementation). Topik lain menyusul dengan struktur sama.
 
 | Item | Status |
 |---|---|
@@ -252,9 +305,10 @@ NORA mengingesti **spec 3GPP resmi** ke vector database, lalu menjawab dengan re
 - Validation layer + confidence score
 - Hermes sebagai orchestration core
 
-### Fase 3 — SaaS Platform
+### Fase 3 — SaaS Platform + Multi-Topik
 - FastAPI backend + auth + query/ingest API
-- Next.js dashboard (login, chat, sources, confidence)
+- **Topic registry + Topic selector** (user pilih Topik; admin tambah Topik baru)
+- Next.js dashboard (login, pilih Topik, chat, sources, confidence)
 - Logging + feedback
 
 ### Fase 4 — Production

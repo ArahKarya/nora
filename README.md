@@ -12,10 +12,25 @@
 
 </div>
 
-> SaaS AI Research Engine untuk standar telekomunikasi **3GPP**.
+> SaaS AI Research Engine **multi-topik** untuk standar telekomunikasi.
 > Kolaborasi **NOZ × PT Arah Karya Sinergi**.
 
 Jawaban teknis telco yang **tergrounded pada spec resmi** (anti-halusinasi), dengan **confidence score** dan **sumber per-section** — diorkestrasi oleh **Hermes Agent**, ditenagai **dual-model** (Opus generator + Sonnet verifier).
+
+NORA adalah **platform multi-topik**: tiap **Topik** = knowledge base standar telco independen (collection sendiri, metode RAG identik). User pilih Topik → bertanya. **Topik pertama yang live: 3GPP TS 24.008.**
+
+## 📚 Topik
+
+| Topik | Status | Domain |
+|---|---|---|
+| **3GPP TS 24.008** | 🟢 **Live** (terbukti E2E) | NAS L3 — MM / GMM / CC / SM |
+| 3GPP TS 23.501 | ⚪ Planned | 5G System Architecture |
+| 3GPP TS 33.501 | ⚪ Planned | 5G Security |
+| ITU-T (Q/X) | ⚪ Planned | Signalling & data networks |
+| IEEE 802.x | ⚪ Planned | LAN / Wireless |
+| GSMA / O-RAN | ⚪ Planned | Operator & Open RAN |
+
+Nambah Topik baru = registrasi metadata + ingest knowledge base. **Tanpa ubah kode engine.**
 
 ---
 
@@ -27,16 +42,18 @@ Jawaban teknis telco yang **tergrounded pada spec resmi** (anti-halusinasi), den
 | Tidak ada bukti / sumber | Tiap jawaban bawa **section reference** (§4.7.3.1) + similarity score |
 | Tidak tahu seberapa percaya | **Confidence score** (HIGH/MEDIUM/LOW) dari verifier independen |
 | Versi spec berubah tiap rilis | Indeks **257 versi** TS 24.008 (R98 1999 → R18 2026), filter per-versi |
+| Butuh banyak domain standar | **Multi-topik** — satu engine, banyak knowledge base (3GPP, ITU-T, IEEE, ...) |
 
 ## 🏛️ Arsitektur
 
 ```
 Next.js Dashboard  ──REST──►  FastAPI Backend  ──►  Hermes Core (orkestrasi)
-                                                     ├─ ChromaDB (vector store)
+  (pilih Topik)                                      ├─ Topic Registry (3GPP / ITU-T / ...)
+                                                     ├─ ChromaDB (1 collection per Topik)
                                                      ├─ Embedding: Gemini (via 9router, dim 3072)
                                                      ├─ Generator: Opus  (via 9router)
                                                      └─ Verifier:  Sonnet (via 9router)
-Knowledge base: 3GPP TS 24.008 — 257 versi, chunked per-section
+Knowledge base per Topik. Topik #1 = 3GPP TS 24.008 — 257 versi, chunked per-section
 ```
 
 ## 🔁 Pipeline (1 query)
@@ -66,13 +83,13 @@ nora/
 
 - [x] Knowledge base 257 versi TS 24.008 terkumpul (778 MB → 229 MB .txt)
 - [x] BRD, PRD, proposal deck lengkap (`docs/`)
-- [x] **Fase 1 — RAG core terbukti E2E** 🎉
+- [x] **Fase 1 — RAG core terbukti E2E** 🎉 (Topik #1: 3GPP TS 24.008)
   - Chunker section-aware (1051 chunk/versi)
   - Embedding Gemini via 9router (dim 3072, RAM-aman)
   - Dual-model: Opus generator + Sonnet verifier
   - Confidence scoring + anti-halusinasi
 - [ ] Fase 2: API + auth (FastAPI)
-- [ ] Fase 3: SaaS dashboard (Next.js)
+- [ ] Fase 3: SaaS dashboard (Next.js) + **multi-topik** (topic selector + registry)
 - [ ] Fase 4: production deploy
 
 ### Bukti Fase 1
@@ -109,6 +126,8 @@ python -m nora.ingest.run               # semua 257 versi
 # tanya
 python -m nora.ask "Apa itu prosedur GPRS Attach?"
 ```
+
+> **Catatan multi-topik:** CLI saat ini beroperasi pada Topik #1 (3GPP TS 24.008). Antarmuka `--topic` (registry + selector) menyusul di Fase 3 — lihat `docs/PRD-NORA.md` §F0 & §7 (API).
 
 ---
 

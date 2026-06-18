@@ -4,9 +4,9 @@
 | | |
 |---|---|
 | **Produk** | NORA — Network Oracle for Reliable Answers |
-| **Tipe** | SaaS — AI Research Engine untuk standar telekomunikasi 3GPP |
+| **Tipe** | SaaS — Platform AI Research Engine multi-topik untuk standar telekomunikasi |
 | **Kolaborasi** | NOZ × PT Arah Karya Sinergi |
-| **Versi** | 0.1 (Draft) |
+| **Versi** | 0.2 (Draft) |
 | **Tanggal** | Juni 2026 |
 | **Disiapkan oleh** | Hermes Arah (ArahKarya) |
 | **Dokumen induk** | `BRD-NORA.md` |
@@ -23,9 +23,9 @@ PRD ini menjabarkan **bagaimana NORA bekerja sebagai produk**: fitur detail, alu
 
 ## 2. Ringkasan Produk
 
-NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan spec 3GPP yang relevan, menyusun jawaban via LLM, **memverifikasi jawaban dengan model kedua**, lalu mengembalikan **jawaban + confidence + sumber**. Semua diorkestrasi oleh **Hermes Agent** sebagai core.
+NORA adalah **platform multi-topik**: user memilih **Topik** (knowledge base standar telco, mis. 3GPP TS 24.008) lalu mengirim **pertanyaan teknis** dalam bahasa natural. Sistem mencari potongan spec relevan **dalam Topik tersebut**, menyusun jawaban via LLM, **memverifikasi jawaban dengan model kedua**, lalu mengembalikan **jawaban + confidence + sumber**. Semua diorkestrasi oleh **Hermes Agent** sebagai core. Topik pertama yang live & terbukti: **3GPP TS 24.008**.
 
-**Satu kalimat:** *"Tanya spec telco pakai bahasa biasa, dapat jawaban akurat yang bisa ditelusuri ke spec resmi."*
+**Satu kalimat:** *"Pilih topik standar telco, tanya pakai bahasa biasa, dapat jawaban akurat yang bisa ditelusuri ke spec resmi."*
 
 ---
 
@@ -51,19 +51,37 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 | US-06 | Admin | meng-ingest spec baru | knowledge base selalu update |
 | US-07 | Admin | melihat log query & usage | monitor & audit pemakaian |
 | US-08 | Engineer | mengakses dari mana saja (web/chat) | tidak terikat ke terminal/server |
+| US-09 | Engineer | memilih Topik (mis. 3GPP TS 24.008) sebelum bertanya | jawaban fokus pada domain spec yang saya butuhkan |
+| US-10 | Admin | menambah Topik baru (registrasi + ingest knowledge base) | platform berkembang ke standar telco lain tanpa ganti kode |
 
 ---
 
 ## 4. Fitur Produk (Feature Breakdown)
 
-### F1 — Ask / Query Engine (CORE)
-**Deskripsi:** User mengirim pertanyaan; NORA menjawab dengan pipeline RAG + dual-model.
+### F0 — Topic Selector & Registry (CORE)
+**Deskripsi:** User memilih **Topik** (knowledge base) sebelum bertanya; tiap Topik punya collection sendiri. Admin mengelola registry Topik.
 
 **Perilaku:**
-1. User input pertanyaan (teks bebas).
-2. Sistem retrieve top-5 chunk relevan dari ChromaDB.
+1. Saat masuk, user lihat daftar Topik tersedia + status (live/indexing/planned).
+2. User pilih satu Topik aktif (mis. "3GPP TS 24.008").
+3. Semua query berikutnya diarahkan ke collection Topik tersebut (isolasi data).
+4. Admin bisa **registrasi Topik baru**: isi metadata (id, nama, deskripsi, collection, kb_dir) → ingest → status `live`.
+
+**Acceptance Criteria:**
+- [ ] AC-F0-1: Daftar Topik tampil dengan nama + deskripsi + status.
+- [ ] AC-F0-2: User wajib pilih Topik aktif sebelum query; query memakai collection Topik tsb.
+- [ ] AC-F0-3: Retrieval tidak bocor lintas-Topik (isolasi terverifikasi).
+- [ ] AC-F0-4: Admin bisa tambah Topik baru tanpa ubah kode engine.
+- [ ] AC-F0-5: `[POST-MVP]` Query lintas-Topik (gabung beberapa Topik).
+
+### F1 — Ask / Query Engine (CORE)
+**Deskripsi:** Dalam Topik aktif, user mengirim pertanyaan; NORA menjawab dengan pipeline RAG + dual-model.
+
+**Perilaku:**
+1. User input pertanyaan (teks bebas) **dalam Topik aktif**.
+2. Sistem retrieve top-5 chunk relevan dari collection Topik.
 3. Generator (Opus) menyusun jawaban dari konteks.
-4. Verifier (Opus) menilai: VALID / PARTIAL / INVALID.
+4. Verifier (Sonnet) menilai: VALID / PARTIAL / INVALID.
 5. Jika INVALID → regenerate (maks 2x).
 6. Validation layer hitung confidence + cek klaim.
 7. Tampilkan jawaban + confidence badge + sumber expandable.
@@ -134,7 +152,7 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 
 ### 5.1 Flow Utama — Ask a Question
 ```
-[Login] → [Dashboard] → ketik pertanyaan → [Kirim]
+[Login] → [Dashboard] → [Pilih Topik: 3GPP TS 24.008 ▾] → ketik pertanyaan → [Kirim]
    ↓
 [Loading: "Mencari spec..." → "Menyusun jawaban..." → "Memverifikasi..."]
    ↓
@@ -147,13 +165,15 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 [Feedback: 👍 benar / 👎 salah / ~ sebagian]
 ```
 
-### 5.2 Flow Admin — Ingest Spec
+### 5.2 Flow Admin — Tambah Topik & Ingest
 ```
-[Login admin] → [Knowledge Base] → [Ingest] → pilih spec/folder
+[Login admin] → [Topik] → [+ Topik Baru]
+   ↓ isi: id, nama, deskripsi, collection, kb_dir
+[Simpan registry] → [Ingest knowledge base Topik]
    ↓
 [Chunking per-section...] → [Embedding...] → [Indexing ke ChromaDB...]
    ↓
-[Selesai: 257 versi, N chunk terindeks]
+[Selesai: Topik status → "live", N versi, M chunk terindeks]
 ```
 
 ---
@@ -164,15 +184,17 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 | Halaman | Isi |
 |---|---|
 | **Login/Register** | Form auth |
-| **Ask (utama)** | Input query besar, riwayat chat, hasil jawaban |
+| **Topik (selector)** | Daftar Topik + status; pilih Topik aktif |
+| **Ask (utama)** | Topik aktif (badge), input query besar, riwayat chat, hasil jawaban |
 | **Answer view** | Jawaban + confidence + verdict + sources expandable + feedback |
-| **History** | Daftar query sebelumnya per-user |
-| **Knowledge Base** (admin) | Status spec terindeks, tombol ingest |
+| **History** | Daftar query sebelumnya per-user (dengan Topik) |
+| **Knowledge Base / Topik** (admin) | Registry Topik, tambah Topik, status spec terindeks, tombol ingest |
 | **Logs** (admin) | Tabel query log + filter |
 
 ### 6.2 Komponen Kunci — Answer Card
 ```
 ┌────────────────────────────────────────────────┐
+│ Topik: 3GPP TS 24.008                            │
 │ Q: "Jelaskan prosedur Attach Request di 24.008"  │
 ├────────────────────────────────────────────────┤
 │ A: Prosedur Attach Request dimulai saat MS...    │
@@ -191,18 +213,37 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 
 ## 7. Kontrak API (Backend)
 
-### 7.1 `POST /api/query`
+### 7.1 `GET /api/topics`
+Daftar Topik tersedia.
+```json
+{
+  "topics": [
+    {
+      "id": "3gpp-ts24008",
+      "nama": "3GPP TS 24.008",
+      "deskripsi": "Mobile radio interface L3; MM/GMM/CC/SM",
+      "collection": "ts24008",
+      "status": "live",
+      "versions_indexed": 257
+    }
+  ]
+}
+```
+
+### 7.2 `POST /api/query`
 **Request:**
 ```json
 {
+  "topic": "3gpp-ts24008",          // WAJIB — Topik aktif
   "query": "Jelaskan prosedur Attach Request di TS 24.008",
-  "version_filter": "16.5.0",   // optional, default: latest
-  "top_k": 5                     // optional, default 5
+  "version_filter": "16.5.0",        // optional, default: latest
+  "top_k": 5                          // optional, default 5
 }
 ```
 **Response:**
 ```json
 {
+  "topic": "3gpp-ts24008",
   "answer": "Prosedur Attach Request dimulai saat MS mengirim...",
   "confidence": 0.87,
   "verifier_verdict": "VALID",
@@ -220,18 +261,30 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 }
 ```
 
-### 7.2 `POST /api/ingest` (admin)
+### 7.3 `POST /api/topics` (admin) — registrasi Topik baru
 ```json
-{ "source_path": "/data/3gpp/24008/txt", "spec_id": "TS 24.008" }
+{
+  "id": "3gpp-ts23501",
+  "nama": "3GPP TS 23.501",
+  "deskripsi": "5G System Architecture",
+  "collection": "ts23501",
+  "kb_dir": "/data/3gpp/23501/txt"
+}
+```
+→ `{ "status": "registered", "topic": "3gpp-ts23501" }`
+
+### 7.4 `POST /api/ingest` (admin)
+```json
+{ "topic": "3gpp-ts24008", "source_path": "/data/3gpp/24008/txt" }
 ```
 → `{ "status": "indexing", "job_id": "...", "total_files": 257 }`
 
-### 7.3 `POST /api/feedback`
+### 7.5 `POST /api/feedback`
 ```json
 { "query_id": "q_abc123", "rating": "correct" }
 ```
 
-### 7.4 `GET /api/history` · `GET /api/logs` (admin) · `POST /api/auth/login|register`
+### 7.6 `GET /api/history` · `GET /api/logs` (admin) · `POST /api/auth/login|register`
 
 ---
 
@@ -240,11 +293,12 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 ### 8.1 Chunking (Ingest)
 - **Strategi:** split berbasis **section number** regex (mis. `^\d+(\.\d+)*\s+[A-Z]`).
 - **Fallback:** jika section terlalu besar (>800 token), sub-split dengan overlap 50 token.
-- **Metadata wajib:** `spec_id, version, section, section_title, source_file`.
+- **Metadata wajib:** `topic, spec_id, version, section, section_title, source_file`.
 
 ### 8.2 Retrieval
-- Embed query → cosine similarity → top-K (default 5).
+- Tentukan **collection** dari Topik aktif → embed query → cosine similarity → top-K (default 5) **dalam collection itu**.
 - Filter metadata `version` jika `version_filter` diberikan.
+- Isolasi Topik: retrieval tidak pernah lintas-collection (kecuali mode lintas-Topik `[POST-MVP]`).
 
 ### 8.3 Prompt (Generator)
 ```
@@ -275,13 +329,14 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 
 ## 9. Acceptance Criteria — Rilis MVP (Definition of Done)
 
-- [ ] DoD-1: TS 24.008 (min. versi terbaru) terindeks penuh di ChromaDB.
-- [ ] DoD-2: `POST /api/query` mengembalikan jawaban + confidence + sumber valid.
+- [ ] DoD-1: Topik #1 (3GPP TS 24.008) terindeks penuh di ChromaDB sebagai collection tersendiri.
+- [ ] DoD-2: `POST /api/query` dengan `topic` mengembalikan jawaban + confidence + sumber valid.
 - [ ] DoD-3: Verifier menolak/flag jawaban tak bersumber (uji 5 query jebakan).
-- [ ] DoD-4: Dashboard: login → ask → answer card lengkap → feedback.
+- [ ] DoD-4: Dashboard: login → pilih Topik → ask → answer card lengkap → feedback.
 - [ ] DoD-5: Engine swap 9router ↔ Ollama via env var berhasil tanpa ubah kode.
-- [ ] DoD-6: Query log tersimpan & dapat ditelusuri admin.
-- [ ] DoD-7: Deploy Docker Compose + akses via Cloudflare Tunnel.
+- [ ] DoD-6: Query log tersimpan (termasuk Topik) & dapat ditelusuri admin.
+- [ ] DoD-7: Admin bisa registrasi + ingest Topik baru tanpa ubah kode engine.
+- [ ] DoD-8: Deploy Docker Compose + akses via Cloudflare Tunnel.
 
 ---
 
@@ -313,7 +368,7 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 
 | # | Pertanyaan | **Keputusan** |
 |---|---|---|
-| Q1 | Embedding pakai 9router atau lokal? | **`nomic-embed-text` lokal** (via Ollama) — gratis, jalan di RPi5, data tidak keluar host |
+| Q1 | Embedding pakai 9router atau lokal? | **9router Gemini** (`gemini/gemini-embedding-001`, dim 3072) — cloud, ringan di RPi5 (RAM aman, tidak OOM). Mode lokal (fastembed) tetap tersedia via `NORA_EMBED_BACKEND=local` |
 | Q2 | Verifier pakai model apa? | **Claude Sonnet** (`cc/claude-sonnet-4-6`) via 9router — lebih hemat dari Opus untuk verifikasi |
 | Q3 | Index berapa versi? | **Semua 257 versi** TS 24.008 (R98 → R18) dengan metadata versi |
 | Q4 | Branding | Lihat **§13 Branding** — palet Navy `#0F3460` + Teal `#16C79A`, tagline *"Reliable answers, grounded in the spec."* |
@@ -324,8 +379,8 @@ NORA menerima **pertanyaan teknis telco** dalam bahasa natural, mencari potongan
 |---|---|---|
 | Generator | `cc/claude-opus-4-8` (Opus) | 9router |
 | Verifier | `cc/claude-sonnet-4-6` (Sonnet) | 9router |
-| Embedding | `nomic-embed-text` | Ollama lokal |
-| Swap lokal | Llama3.1 / Qwen | Ollama |
+| Embedding | `gemini/gemini-embedding-001` (dim 3072) | 9router (Gemini) |
+| Swap lokal | Llama3.1 / Qwen (gen) · fastembed (embed) | Ollama / lokal |
 
 ---
 

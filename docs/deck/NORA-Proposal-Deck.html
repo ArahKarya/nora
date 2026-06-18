@@ -124,8 +124,8 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     </div>
     <div class="tag">"Reliable answers, grounded in the spec."</div>
     <div class="meta">
-      AI Research Engine untuk Standar Telekomunikasi 3GPP<br>
-      Proposal Produk &amp; Arsitektur Teknis · Juni 2026
+      Platform AI Research Engine Multi-Topik untuk Standar Telekomunikasi<br>
+      Topik #1: 3GPP TS 24.008 · Proposal Produk &amp; Arsitektur · Juni 2026
     </div>
   </div>
   <div class="by">
@@ -156,9 +156,10 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <h2 class="sh">NORA — jawaban yang selalu bersumber dari spec resmi</h2>
     <p class="lead">Tanya pakai bahasa biasa. NORA mencari spec relevan, menyusun jawaban, <b>memverifikasinya dengan model kedua</b>, lalu mengembalikan jawaban + tingkat keyakinan + sumber.</p>
     <ul class="feat">
-      <li><b>Anti-halusinasi</b> — jawaban wajib tergrounded pada spec 3GPP resmi (RAG)</li>
+      <li><b>Anti-halusinasi</b> — jawaban wajib tergrounded pada spec resmi (RAG)</li>
       <li><b>Self-validating</b> — model Verifier mengecek jawaban Generator sebelum dikirim</li>
       <li><b>Auditable</b> — tiap jawaban punya confidence score + referensi section spec</li>
+      <li><b>Multi-topik</b> — satu engine, banyak knowledge base (3GPP, ITU-T, IEEE, ...)</li>
       <li><b>Engine-agnostic</b> — cloud (9router) atau lokal (Ollama), satu arsitektur</li>
     </ul>
   </div>
@@ -216,7 +217,8 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
       <div class="layer"><span class="ln">BACKEND</span><span class="lt">FastAPI</span><span class="ld">REST API — auth, query, ingest; memanggil Hermes core</span></div>
       <div class="layer"><span class="ln">OTAK</span><span class="lt">Hermes Agent (embedded)</span><span class="ld">Orkestrasi: retrieve → generate → verify → validate → loop</span></div>
       <div class="layer"><span class="ln">ENGINE</span><span class="lt">9router · Opus + Sonnet</span><span class="ld">Generator (Opus) + Verifier (Sonnet) — swap ke Ollama lokal</span></div>
-      <div class="layer"><span class="ln">DATA</span><span class="lt">ChromaDB + nomic-embed</span><span class="ld">Vector store 257 versi TS 24.008, embedding lokal</span></div>
+      <div class="layer"><span class="ln">TOPIK</span><span class="lt">Topic Registry</span><span class="ld">Multi-topik: 1 collection per Topik (3GPP TS 24.008, ITU-T, IEEE, ...)</span></div>
+      <div class="layer"><span class="ln">DATA</span><span class="lt">ChromaDB + Gemini embed</span><span class="ld">Vector store per Topik; embedding Gemini via 9router (dim 3072)</span></div>
     </div>
   </div>
   <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">06</span></div>
@@ -225,9 +227,9 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
 <!-- 7 KNOWLEDGE BASE -->
 <section class="slide">
   <div class="pad">
-    <div class="kicker">Knowledge Base</div>
-    <h2 class="sh">TS 24.008 — terindeks penuh</h2>
-    <p class="lead">Mobile radio interface Layer 3: Mobility Management, GPRS MM, Call Control, Session Management. Seluruh sejarah rilis dari R98 hingga R18.</p>
+    <div class="kicker">Knowledge Base · Topik #1</div>
+    <h2 class="sh">3GPP TS 24.008 — terindeks penuh</h2>
+    <p class="lead">Topik pertama yang live. Mobile radio interface Layer 3: Mobility Management, GPRS MM, Call Control, Session Management. Seluruh sejarah rilis R98 → R18. Topik lain (ITU-T, IEEE, GSMA) menyusul dengan metode sama.</p>
     <div class="stats">
       <div class="stat"><div class="big">257</div><div class="lbl">versi rilis terkumpul</div></div>
       <div class="stat"><div class="big">1999–2026</div><div class="lbl">rentang tahun spec</div></div>
@@ -236,6 +238,25 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     </div>
   </div>
   <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">07</span></div>
+</section>
+
+<!-- 7B MULTI-TOPIK -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Multi-Topik</div>
+    <h2 class="sh">Satu engine RAG, banyak knowledge base</h2>
+    <p class="lead">NORA bukan terkunci ke satu spec. Tiap <b>Topik</b> = knowledge base standar telco independen dengan collection sendiri, tapi metode RAG identik. User pilih Topik → bertanya. Nambah Topik baru: registrasi + ingest, <b>tanpa ubah kode engine.</b></p>
+    <table class="cmp">
+      <tr><th>Topik</th><th>Status</th><th>Domain</th></tr>
+      <tr><td><b>3GPP TS 24.008</b></td><td class="ok">🟢 Live (terbukti E2E)</td><td>NAS L3 — MM / GMM / CC / SM</td></tr>
+      <tr><td>3GPP TS 23.501</td><td>⚪ Planned</td><td>5G System Architecture</td></tr>
+      <tr><td>3GPP TS 33.501</td><td>⚪ Planned</td><td>5G Security</td></tr>
+      <tr><td>ITU-T (seri Q / X)</td><td>⚪ Planned</td><td>Signalling &amp; data networks</td></tr>
+      <tr><td>IEEE 802.x</td><td>⚪ Planned</td><td>LAN / Wireless</td></tr>
+      <tr><td>GSMA / O-RAN</td><td>⚪ Planned</td><td>Operator &amp; Open RAN</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">08</span></div>
 </section>
 
 <!-- 8 PERBANDINGAN -->
@@ -253,7 +274,7 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
       <tr><td>Privacy</td><td class="ok">Lokal</td><td class="ok">Lokal penuh (mode Ollama)</td></tr>
     </table>
   </div>
-  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">08</span></div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">09</span></div>
 </section>
 
 <!-- 9 STACK -->
@@ -263,14 +284,14 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <h2 class="sh">Stack ringan, jalan di Raspberry Pi 5</h2>
     <div class="grid3">
       <div class="card teal"><div class="ic">🧠</div><h3>Engine AI</h3><p>9router → Claude Opus (Generator) + Sonnet (Verifier). Swap ke Ollama (Llama3.1/Qwen) untuk lokal penuh.</p></div>
-      <div class="card teal"><div class="ic">🗄️</div><h3>Vector & Embedding</h3><p>ChromaDB embedded + nomic-embed-text lokal. Hemat, cepat, data tidak keluar host.</p></div>
+      <div class="card teal"><div class="ic">🗄️</div><h3>Vector & Embedding</h3><p>ChromaDB embedded (1 collection per Topik) + embedding Gemini via 9router (dim 3072). RAM RPi5 aman — embedding di cloud.</p></div>
       <div class="card teal"><div class="ic">⚙️</div><h3>Orkestrasi</h3><p>Hermes Agent — memory, skills, subagent paralel, cron auto-reindex.</p></div>
       <div class="card teal"><div class="ic">🖥️</div><h3>Aplikasi</h3><p>FastAPI backend + Next.js dashboard. Multi-user, auth, logging.</p></div>
       <div class="card teal"><div class="ic">🐳</div><h3>Deploy</h3><p>Docker Compose di RPi5 8GB. Reproducible, ringan.</p></div>
       <div class="card teal"><div class="ic">🔒</div><h3>Akses Aman</h3><p>Cloudflare Tunnel — remote tanpa membuka port. Akses dari mana saja.</p></div>
     </div>
   </div>
-  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">09</span></div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">10</span></div>
 </section>
 
 <!-- 10 ROADMAP -->
@@ -281,12 +302,12 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <div class="phase">
       <div class="pcol active"><div class="pn">FASE 1</div><h4>RAG Core</h4><li>Chunk per-section</li><li>Embed 257 versi</li><li>Index ChromaDB</li><li>Query CLI dasar</li></div>
       <div class="pcol"><div class="pn">FASE 2</div><h4>Dual-Model</h4><li>Generator + Verifier</li><li>Validation + confidence</li><li>Hermes orkestrasi</li><li>Loop verifikasi</li></div>
-      <div class="pcol"><div class="pn">FASE 3</div><h4>SaaS Platform</h4><li>FastAPI + auth</li><li>Next.js dashboard</li><li>Logging + feedback</li><li>Multi-user</li></div>
+      <div class="pcol"><div class="pn">FASE 3</div><h4>SaaS + Multi-Topik</h4><li>FastAPI + auth</li><li>Topic registry + selector</li><li>Next.js dashboard</li><li>Logging + feedback</li></div>
       <div class="pcol"><div class="pn">FASE 4</div><h4>Production</h4><li>Docker Compose</li><li>Cloudflare Tunnel</li><li>Cron auto-reindex</li><li>Monitoring</li></div>
     </div>
     <p class="lead" style="margin-top:30px">Knowledge base sudah terkumpul. Fase 1 siap dieksekusi.</p>
   </div>
-  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">10</span></div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">11</span></div>
 </section>
 
 <!-- 11 CLOSING -->
@@ -296,8 +317,8 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <h1>Mari bangun NORA.</h1>
     <div class="tag">"Reliable answers, grounded in the spec."</div>
     <div class="meta">
-      Knowledge base 3GPP siap · Arsitektur terdefinisi · Fase 1 siap jalan.<br>
-      Engine telco AI yang akurat, terverifikasi, dan dapat ditelusuri.
+      Topik #1 (3GPP TS 24.008) terbukti E2E · Arsitektur multi-topik · Fase 2 siap jalan.<br>
+      Platform telco AI yang akurat, terverifikasi, dan dapat ditelusuri — banyak Topik, satu engine.
     </div>
   </div>
   <div class="by" style="position:absolute;bottom:54px;right:80px;text-align:right">
