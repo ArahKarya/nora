@@ -17,6 +17,15 @@ export interface Topic {
   count: number;
 }
 
+interface TopicApi {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  chunk_count?: number | null;
+  count?: number | null;
+}
+
 export interface Source {
   spec: string;
   version: string;
@@ -31,7 +40,7 @@ export type Flag = "HIGH" | "MEDIUM" | "LOW";
 export interface QueryResult {
   answer: string;
   confidence: number;
-  flag: Flag;
+  flag: string | null;
   verifier_verdict: string;
   sources: Source[];
   query_id: string;
@@ -109,8 +118,16 @@ export function me(): Promise<User> {
 }
 
 // ---- Topics ----
-export function getTopics(): Promise<Topic[]> {
-  return request<Topic[]>("/api/topics");
+export async function getTopics(): Promise<Topic[]> {
+  const r = await request<{ topics: TopicApi[] } | TopicApi[]>("/api/topics");
+  const arr = Array.isArray(r) ? r : r.topics ?? [];
+  return arr.map((t) => ({
+    id: t.id,
+    slug: t.slug,
+    name: t.name,
+    description: t.description,
+    count: t.chunk_count ?? t.count ?? 0,
+  }));
 }
 
 // ---- Query / Sessions ----
@@ -125,8 +142,9 @@ export function postQuery(payload: {
   });
 }
 
-export function getSessions(): Promise<SessionMeta[]> {
-  return request<SessionMeta[]>("/api/sessions");
+export async function getSessions(): Promise<SessionMeta[]> {
+  const r = await request<{ sessions: SessionMeta[] } | SessionMeta[]>("/api/sessions");
+  return Array.isArray(r) ? r : r.sessions ?? [];
 }
 
 export function getSession(id: string): Promise<SessionMeta> {
