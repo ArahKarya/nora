@@ -1,0 +1,3 @@
+chromadb>=1.5.0
+openai>=2.0.0
+fastembed>=0.8.0  # opsional, hanya untuk NORA_EMBED_BACKEND=local
