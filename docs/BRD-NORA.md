@@ -19,7 +19,7 @@ NORA adalah **platform AI Research Engine berbasis RAG** yang menjawab pertanyaa
 
 NORA dirancang **multi-topik**: tiap **Topik** adalah knowledge base independen (mis. 3GPP TS 24.008, 3GPP TS 23.501, ITU-T, IEEE 802.x, GSMA) dengan metode RAG yang **identik**. User memilih Topik sebelum bertanya, dan sistem mengarahkan query ke knowledge base Topik tersebut. **Topik pertama** yang diimplementasi & terbukti adalah **3GPP TS 24.008** (reference implementation).
 
-Berbeda dengan chatbot LLM umum yang menjawab dari ingatan dan rawan ngarang, NORA memakai arsitektur **RAG + dual-model (Generator → Verifier) + validation layer**, diorkestrasi oleh **Hermes Agent** sebagai otak eksekusi.
+Berbeda dengan chatbot LLM umum yang menjawab dari ingatan dan rawan ngarang, NORA memakai arsitektur **RAG + dual-model (Generator → Verifier) + validation layer**, diorkestrasi oleh **NORA Agent Layer** — agent engine mandiri milik NORA (terinspirasi pola Hermes: retrieve → reason → verify → loop + memory per-user), dibangun **multi-tenant** untuk skala SaaS banyak user.
 
 **Engine default:** API cloud via **9router (Claude Opus generator + Sonnet verifier)**. **Mode lokal:** dapat di-swap ke **Ollama** tanpa mengubah arsitektur — privacy-first opsional.
 
@@ -122,6 +122,55 @@ NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap kno
 
 ---
 
+## 4B. NORA Agent Layer (Engine Orkestrasi Mandiri)
+
+NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang mengorkestrasi reasoning multi-step. Layer ini **milik NORA sendiri** (bukan instance Hermes yang di-embed), terinspirasi pola Hermes Agent namun **dirancang multi-tenant untuk SaaS**.
+
+### Kenapa agent layer sendiri (bukan embed Hermes runtime)
+| Kebutuhan SaaS | Hermes runtime apa adanya | NORA Agent Layer |
+|---|---|---|
+| Banyak user paralel | 1 session/profil, stateful | ✅ Stateless-per-request, state di DB |
+| Isolasi data per-user | Memory global per profil | ✅ Memory & history per-user (Postgres) |
+| Scale horizontal | Proses stateful tunggal | ✅ Replica di banyak server |
+| Deploy & pindah server | Bundel runtime berat | ✅ Container ringan, DB terpisah |
+
+> Hermes dipakai sebagai **inspirasi pola + tool pengembangan**, bukan runtime produksi. Yang berharga (loop retrieve→generate→verify→validate, dual-model, memory) di-implementasi sebagai kode NORA yang multi-tenant.
+
+### Tanggung jawab Agent Layer
+1. **Orkestrasi pipeline**: retrieve → generate (Opus) → verify (Sonnet) → validate → loop jika INVALID.
+2. **Memory per-user**: konteks riset & history tersimpan per-user (bukan global).
+3. **Reasoning multi-step**: query kompleks (lintas-versi/lintas-Topik) bisa dipecah jadi sub-langkah.
+4. **Routing Topik**: arahkan query ke collection Topik aktif.
+5. **Stateless & scalable**: tiap request mandiri; state durable di Postgres → aman di-load-balance.
+
+---
+
+## 4C. Arsitektur Multi-Tenant (Scale-Ready)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Next.js UI/UX ── chat ──► FastAPI Gateway                │
+│  (login, pilih Topik,      (auth, rate-limit, route)      │
+│   chat bubble, sources)            │                      │
+│                                    ▼                      │
+│                        ╔═══════════════════════╗          │
+│                        ║   NORA AGENT LAYER    ║          │
+│                        ║  (mandiri, per-user)  ║          │
+│                        ║  orchestrator + memory║          │
+│                        ╚═══════╤═══════════════╝          │
+│           ┌────────────────────┼──────────────┐           │
+│           ▼                    ▼              ▼           │
+│     Vector DB            LLM Engine        Postgres       │
+│  (ChromaDB→Qdrant)    (9router/vLLM)    (user, memory,    │
+│   per-Topik            gen + verify      history, log)    │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Demo (sekarang, RPi5):** Agent layer ringan + ChromaDB + 9router.
+**Produksi (server proper):** swap ChromaDB→**Qdrant** (vector skala besar), scale replica agent + gateway, Postgres terpisah. **Arsitektur sama, tinggal naik kelas** — tanpa rewrite.
+
+---
+
 ## 5. Kebutuhan Fungsional
 
 > Notasi: **MUST** (wajib MVP), **SHOULD** (sebaiknya), **COULD** (opsional lanjut).
@@ -167,14 +216,15 @@ NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap kno
 | FR-OUT-002 | Sources MUST sebut spec ID + versi + section number | MUST |
 | FR-OUT-003 | UI SHOULD render jawaban + sumber yang bisa di-expand ke teks asli | SHOULD |
 
-### 5.6 Orkestrasi (Hermes Agent — embedded core)
+### 5.6 Orkestrasi (NORA Agent Layer — engine mandiri, multi-tenant)
 | ID | Requirement | Prioritas |
 |---|---|---|
-| FR-ORC-001 | Hermes MUST jadi orchestration core: retrieve → generate → verify → validate → loop | MUST |
-| FR-ORC-002 | Hermes MUST dipanggil sebagai service/library internal oleh backend (opsi 5a) | MUST |
-| FR-ORC-003 | Hermes SHOULD delegate query kompleks lintas-versi ke subagent paralel | SHOULD |
-| FR-ORC-004 | Hermes SHOULD simpan konteks riset (memory) per user/sesi | SHOULD |
-| FR-ORC-005 | Hermes COULD jadwalkan auto-reindex spec via cron | COULD |
+| FR-ORC-001 | Agent Layer MUST jadi orchestration core: retrieve → generate → verify → validate → loop | MUST |
+| FR-ORC-002 | Agent Layer MUST dipanggil backend sebagai service/library internal (bukan embed Hermes runtime) | MUST |
+| FR-ORC-003 | Agent Layer MUST stateless-per-request; state durable (memory, history) di Postgres → scalable | MUST |
+| FR-ORC-004 | Agent Layer MUST isolasi memory & history per-user (multi-tenant) | MUST |
+| FR-ORC-005 | Agent Layer SHOULD reasoning multi-step untuk query kompleks lintas-versi/lintas-Topik | SHOULD |
+| FR-ORC-006 | Agent Layer COULD jadwalkan auto-reindex spec (background worker/cron) | COULD |
 
 ### 5.7 SaaS Platform (Multi-user)
 | ID | Requirement | Prioritas |
@@ -220,12 +270,12 @@ NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap kno
 │  ┌──────────────┐         ┌────────────────────────────────┐ │
 │  │  Next.js     │  REST   │      FastAPI Backend            │ │
 │  │  Dashboard   │ ──────► │  (auth, query API, ingest API) │ │
-│  │ (login,chat, │ ◄────── │                                │ │
-│  │  sources)    │  JSON   │   ┌──────────────────────────┐ │ │
-│  └──────────────┘         │   │  HERMES AGENT (core)     │ │ │
-│                           │   │  Orkestrasi:             │ │ │
+│  │ (login,topik,│ ◄────── │                                │ │
+│  │ chat,sources)│  JSON   │   ┌──────────────────────────┐ │ │
+│  └──────────────┘         │   │  NORA AGENT LAYER (core) │ │ │
+│                           │   │  mandiri · multi-tenant  │ │ │
 │                           │   │  retrieve→gen→verify→     │ │ │
-│                           │   │  validate→loop           │ │ │
+│                           │   │  validate→loop · memory  │ │ │
 │                           │   └───────┬──────────────────┘ │ │
 │                           │           │                    │ │
 │                           │   ┌───────▼────────┐  ┌───────┐│ │
@@ -266,11 +316,12 @@ NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap kno
 |---|---|---|---|
 | Frontend | Dashboard | Next.js + Tailwind | SSR, modern, cepat |
 | Backend | API | FastAPI (Python) | Async, cocok untuk AI pipeline |
-| Orkestrasi | Agent | **Hermes Agent** (embedded) | Memory, skills, subagent, loop |
-| LLM (default) | Cloud | **9router → Claude Opus** | Reasoning kuat untuk verifikasi |
+| Orkestrasi | Agent Layer | **NORA Agent Layer** (mandiri, multi-tenant) | Loop verify, memory per-user, scalable |
+| LLM (default) | Cloud | **9router → Opus + Sonnet** | Generator + Verifier |
 | LLM (swap) | Lokal | Ollama (Llama3.1/Qwen) | Privacy-first opsional |
-| Vector store | DB | ChromaDB | Ringan, embedded, cocok RPi5/VPS |
-| Embedding | Model | 9router embed / nomic-embed-text | Sesuai mode cloud/lokal |
+| Vector store | DB | ChromaDB (demo) → **Qdrant** (produksi) | Ringan untuk RPi5; Qdrant untuk skala |
+| State / Auth | DB | **PostgreSQL** | User, memory, history, log, JWT/session |
+| Embedding | Model | 9router Gemini (dim 3072) | Cloud, RAM-aman |
 | Parsing | Doc→Text | LibreOffice headless (sudah teruji) | Convert .doc 3GPP → .txt |
 | Auth | - | JWT / session | Multi-user SaaS |
 | Deploy | Infra | Docker Compose + CF Tunnel | Containerized, remote aman |

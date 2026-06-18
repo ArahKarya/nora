@@ -211,11 +211,11 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
 <section class="slide">
   <div class="pad">
     <div class="kicker">Arsitektur</div>
-    <h2 class="sh">Hermes Agent sebagai otak orkestrasi</h2>
+    <h2 class="sh">NORA Agent Layer sebagai otak orkestrasi</h2>
     <div class="layers">
       <div class="layer"><span class="ln">FRONTEND</span><span class="lt">Next.js Dashboard</span><span class="ld">Login, chat query, lihat jawaban + sumber + confidence</span></div>
-      <div class="layer"><span class="ln">BACKEND</span><span class="lt">FastAPI</span><span class="ld">REST API — auth, query, ingest; memanggil Hermes core</span></div>
-      <div class="layer"><span class="ln">OTAK</span><span class="lt">Hermes Agent (embedded)</span><span class="ld">Orkestrasi: retrieve → generate → verify → validate → loop</span></div>
+      <div class="layer"><span class="ln">BACKEND</span><span class="lt">FastAPI</span><span class="ld">REST API — auth, query, ingest; memanggil Agent Layer</span></div>
+      <div class="layer"><span class="ln">OTAK</span><span class="lt">NORA Agent Layer (mandiri)</span><span class="ld">Multi-tenant: retrieve → generate → verify → validate → loop + memory per-user</span></div>
       <div class="layer"><span class="ln">ENGINE</span><span class="lt">9router · Opus + Sonnet</span><span class="ld">Generator (Opus) + Verifier (Sonnet) — swap ke Ollama lokal</span></div>
       <div class="layer"><span class="ln">TOPIK</span><span class="lt">Topic Registry</span><span class="ld">Multi-topik: 1 collection per Topik (3GPP TS 24.008, ITU-T, IEEE, ...)</span></div>
       <div class="layer"><span class="ln">DATA</span><span class="lt">ChromaDB + Gemini embed</span><span class="ld">Vector store per Topik; embedding Gemini via 9router (dim 3072)</span></div>
@@ -265,11 +265,11 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <div class="kicker">Pembeda</div>
     <h2 class="sh">Pipeline statis vs NORA berorkestrasi</h2>
     <table class="cmp">
-      <tr><th>Aspek</th><th>Pendekatan dasar</th><th>NORA + Hermes</th></tr>
+      <tr><th>Aspek</th><th>Pendekatan dasar</th><th>NORA Agent Layer</th></tr>
       <tr><td>Keandalan jawaban</td><td class="x">Single model, rawan ngarang</td><td class="ok">Generator + Verifier + validasi</td></tr>
       <tr><td>Sumber</td><td class="x">Sering tanpa referensi</td><td class="ok">Selalu sebut section spec</td></tr>
       <tr><td>Antarmuka</td><td class="x">CLI / script manual</td><td class="ok">Dashboard web + (opsi) Telegram</td></tr>
-      <tr><td>Update spec</td><td class="x">Manual</td><td class="ok">Terjadwal via cron Hermes</td></tr>
+      <tr><td>Update spec</td><td class="x">Manual</td><td class="ok">Terjadwal via background worker</td></tr>
       <tr><td>Engine</td><td class="x">Terkunci satu model</td><td class="ok">Cloud ↔ lokal, swappable</td></tr>
       <tr><td>Privacy</td><td class="ok">Lokal</td><td class="ok">Lokal penuh (mode Ollama)</td></tr>
     </table>
@@ -285,7 +285,7 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <div class="grid3">
       <div class="card teal"><div class="ic">🧠</div><h3>Engine AI</h3><p>9router → Claude Opus (Generator) + Sonnet (Verifier). Swap ke Ollama (Llama3.1/Qwen) untuk lokal penuh.</p></div>
       <div class="card teal"><div class="ic">🗄️</div><h3>Vector & Embedding</h3><p>ChromaDB embedded (1 collection per Topik) + embedding Gemini via 9router (dim 3072). RAM RPi5 aman — embedding di cloud.</p></div>
-      <div class="card teal"><div class="ic">⚙️</div><h3>Orkestrasi</h3><p>Hermes Agent — memory, skills, subagent paralel, cron auto-reindex.</p></div>
+      <div class="card teal"><div class="ic">⚙️</div><h3>Orkestrasi</h3><p>NORA Agent Layer mandiri — multi-tenant, memory per-user, reasoning multi-step, scalable.</p></div>
       <div class="card teal"><div class="ic">🖥️</div><h3>Aplikasi</h3><p>FastAPI backend + Next.js dashboard. Multi-user, auth, logging.</p></div>
       <div class="card teal"><div class="ic">🐳</div><h3>Deploy</h3><p>Docker Compose di RPi5 8GB. Reproducible, ringan.</p></div>
       <div class="card teal"><div class="ic">🔒</div><h3>Akses Aman</h3><p>Cloudflare Tunnel — remote tanpa membuka port. Akses dari mana saja.</p></div>
@@ -301,7 +301,7 @@ table.cmp .ok{ color:var(--teal); font-weight:700; }
     <h2 class="sh">Dari fondasi RAG ke produk SaaS</h2>
     <div class="phase">
       <div class="pcol active"><div class="pn">FASE 1</div><h4>RAG Core</h4><li>Chunk per-section</li><li>Embed 257 versi</li><li>Index ChromaDB</li><li>Query CLI dasar</li></div>
-      <div class="pcol"><div class="pn">FASE 2</div><h4>Dual-Model</h4><li>Generator + Verifier</li><li>Validation + confidence</li><li>Hermes orkestrasi</li><li>Loop verifikasi</li></div>
+      <div class="pcol"><div class="pn">FASE 2</div><h4>Dual-Model</h4><li>Generator + Verifier</li><li>Validation + confidence</li><li>Agent Layer orkestrasi</li><li>Loop verifikasi</li></div>
       <div class="pcol"><div class="pn">FASE 3</div><h4>SaaS + Multi-Topik</h4><li>FastAPI + auth</li><li>Topic registry + selector</li><li>Next.js dashboard</li><li>Logging + feedback</li></div>
       <div class="pcol"><div class="pn">FASE 4</div><h4>Production</h4><li>Docker Compose</li><li>Cloudflare Tunnel</li><li>Cron auto-reindex</li><li>Monitoring</li></div>
     </div>

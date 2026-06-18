@@ -23,7 +23,7 @@ PRD ini menjabarkan **bagaimana NORA bekerja sebagai produk**: fitur detail, alu
 
 ## 2. Ringkasan Produk
 
-NORA adalah **platform multi-topik**: user memilih **Topik** (knowledge base standar telco, mis. 3GPP TS 24.008) lalu mengirim **pertanyaan teknis** dalam bahasa natural. Sistem mencari potongan spec relevan **dalam Topik tersebut**, menyusun jawaban via LLM, **memverifikasi jawaban dengan model kedua**, lalu mengembalikan **jawaban + confidence + sumber**. Semua diorkestrasi oleh **Hermes Agent** sebagai core. Topik pertama yang live & terbukti: **3GPP TS 24.008**.
+NORA adalah **platform multi-topik**: user memilih **Topik** (knowledge base standar telco, mis. 3GPP TS 24.008) lalu mengirim **pertanyaan teknis** dalam bahasa natural. Sistem mencari potongan spec relevan **dalam Topik tersebut**, menyusun jawaban via LLM, **memverifikasi jawaban dengan model kedua**, lalu mengembalikan **jawaban + confidence + sumber**. Semua diorkestrasi oleh **NORA Agent Layer** (engine mandiri, multi-tenant). Topik pertama yang live & terbukti: **3GPP TS 24.008**.
 
 **Satu kalimat:** *"Pilih topik standar telco, tanya pakai bahasa biasa, dapat jawaban akurat yang bisa ditelusuri ke spec resmi."*
 
@@ -320,10 +320,11 @@ Daftar Topik tersedia.
 - Confidence = fungsi dari: verdict verifier + skor similarity rata-rata top-K + ada/tidaknya klaim tak bersumber.
 - `< 0.7` → flag LOW CONFIDENCE.
 
-### 8.6 Hermes Orkestrasi
-- Hermes core dipanggil backend sebagai service/library (opsi 5a).
+### 8.6 NORA Agent Layer (Orkestrasi)
+- Agent layer **mandiri** (kode NORA, bukan embed Hermes runtime) dipanggil backend sebagai service/library.
 - Menjalankan: retrieve → generate → verify → validate → loop.
-- `[POST-MVP]` subagent paralel untuk cross-version; memory per-sesi; cron reindex.
+- **Multi-tenant**: stateless-per-request, memory & history per-user di Postgres → scalable.
+- `[POST-MVP]` reasoning multi-step untuk cross-version/cross-Topik; background worker auto-reindex.
 
 ---
 
@@ -354,11 +355,11 @@ Daftar Topik tersedia.
 
 ## 11. Dependensi & Asumsi
 
-- 9router tersedia & punya kuota Opus (Generator + Verifier = 2 call/query).
-- Embedding tersedia (9router embed atau lokal nomic-embed-text).
-- Knowledge base TS 24.008 (.txt) sudah ter-convert (sedang berjalan).
-- Hermes Agent terpasang di host (sudah ada).
-- ChromaDB + Docker tersedia di RPi5/VPS.
+- 9router tersedia & punya kuota Opus + Sonnet (Generator + Verifier = 2 call/query).
+- Embedding tersedia (9router Gemini `gemini-embedding-001`, atau lokal fastembed).
+- Knowledge base Topik (.txt) sudah ter-convert.
+- **NORA Agent Layer** = kode internal NORA (bukan dependensi Hermes runtime).
+- ChromaDB (demo) / Qdrant (produksi) + PostgreSQL (state) + Docker tersedia di RPi5/VPS.
 
 ---
 
