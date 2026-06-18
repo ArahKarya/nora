@@ -1,3 +1,15 @@
 chromadb>=1.5.0
 openai>=2.0.0
 fastembed>=0.8.0  # opsional, hanya untuk NORA_EMBED_BACKEND=local
+
+# --- NORA backend API ---
+fastapi
+uvicorn[standard]
+sqlalchemy>=2
+psycopg[binary]
+bcrypt>=4.0
+python-jose[cryptography]
+python-multipart
+pydantic>=2
+pydantic-settings
+email-validator

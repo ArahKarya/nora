@@ -1,0 +1,74 @@
+# NORA — production stack (RPi5 prototype, portable ke server)
+# Service: postgres (state) + backend (FastAPI+RAG) + frontend (Next.js)
+# ChromaDB = embedded di backend (mount ./backend/data/chroma), bukan service terpisah.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nora_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-nora}
+    volumes:
+      - nora-pgdata:/var/lib/postgresql/data
+    networks:
+      - nora-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nora} -d ${POSTGRES_DB:-nora}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nora-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://nora:nora_change_me@postgres:5432/nora}
+      SECRET_KEY: ${SECRET_KEY:-nora-dev-secret-change-me}
+      NORA_CORS_ORIGINS: ${NORA_CORS_ORIGINS:-http://localhost:3030}
+      NORA_ROUTER_URL: ${NORA_ROUTER_URL:-http://host.docker.internal:20128/v1}
+      NORA_ROUTER_KEY: ${NORA_ROUTER_KEY:-sk-local}
+      NORA_CHROMA_PATH: ${NORA_CHROMA_PATH:-/app/data/chroma}
+      NORA_COLLECTION: ${NORA_COLLECTION:-ts24008}
+    volumes:
+      # ChromaDB existing (read-write; ingest host tetap nulis ke folder sama)
+      - ./backend/data/chroma:/app/data/chroma
+    ports:
+      - "8010:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - nora-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8010}
+    container_name: nora-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3030:3000"
+    networks:
+      - nora-net
+
+networks:
+  nora-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.14.0/24
+
+volumes:
+  nora-pgdata:
