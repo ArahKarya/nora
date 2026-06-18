@@ -10,8 +10,10 @@ backend/data/
 backend/logs/
 *.log
 
-# 3GPP knowledge base (besar, di luar repo)
-data/3gpp/
+# 3GPP knowledge base: file .txt di-track (data publik).
+# Hanya exclude zip/doc mentah kalau ada.
+data/3gpp/**/*.zip
+data/3gpp/**/*.doc
 
 # Env / secrets
 .env
