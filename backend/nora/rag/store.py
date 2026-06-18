@@ -63,3 +63,25 @@ def retrieve(query: str, top_k: int = 5, version_filter: str | None = None) -> l
 def stats() -> dict:
     col = get_collection()
     return {"collection": COLLECTION, "count": col.count()}
+
+
+def indexed_versions() -> set:
+    """Set versi (metadata 'version') yang sudah ada di collection — untuk skip-existing saat resume."""
+    col = get_collection()
+    out = set()
+    n = col.count()
+    if not n:
+        return out
+    off = 0
+    while off < n:
+        res = col.get(include=["metadatas"], limit=2000, offset=off)
+        metas = res.get("metadatas") or []
+        for m in metas:
+            v = (m or {}).get("version")
+            if v:
+                out.add(v)
+        if len(metas) < 2000:
+            break
+        off += 2000
+    return out
+

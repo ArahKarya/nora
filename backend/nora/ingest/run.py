@@ -8,8 +8,12 @@ Usage:
 from __future__ import annotations
 import argparse, glob, os, sys, time
 from .chunker import chunk_file
-from ..rag.store import add_chunks, stats
+from ..rag.store import add_chunks, stats, indexed_versions
 from ..engine.config import KB_TXT_DIR
+
+
+def _ver_of(path: str) -> str:
+    return os.path.basename(path).replace(".txt", "").split("-", 1)[-1]
 
 
 def main():
@@ -17,6 +21,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="batasi N file (0=semua)")
     ap.add_argument("--files", nargs="*", help="nama file spesifik di KB dir")
     ap.add_argument("--dir", default=KB_TXT_DIR)
+    ap.add_argument("--skip-existing", action="store_true", help="lewati versi yang sudah terindeks (resume)")
     args = ap.parse_args()
 
     if args.files:
@@ -26,18 +31,28 @@ def main():
         if args.limit:
             paths = paths[:args.limit]
 
-    print(f"[ingest] {len(paths)} file dari {args.dir}")
+    skip = set()
+    if args.skip_existing:
+        skip = indexed_versions()
+        print(f"[ingest] skip-existing aktif: {len(skip)} versi sudah terindeks", flush=True)
+
+    print(f"[ingest] {len(paths)} file dari {args.dir}", flush=True)
     grand = 0
+    skipped = 0
     t0 = time.time()
     for i, p in enumerate(paths, 1):
         if not os.path.exists(p):
-            print(f"  SKIP (missing) {p}"); continue
+            print(f"  SKIP (missing) {p}", flush=True); continue
+        if args.skip_existing and _ver_of(p) in skip:
+            skipped += 1
+            print(f"  [{i}/{len(paths)}] {os.path.basename(p)}: SKIP (sudah terindeks)", flush=True)
+            continue
         chunks = list(chunk_file(p))
         n = add_chunks(chunks)
         grand += n
         print(f"  [{i}/{len(paths)}] {os.path.basename(p)}: {n} chunks (total {grand})", flush=True)
     dt = time.time() - t0
-    print(f"[ingest] DONE {grand} chunks in {dt:.0f}s. {stats()}")
+    print(f"[ingest] DONE {grand} chunks baru, {skipped} versi di-skip, dalam {dt:.0f}s. {stats()}", flush=True)
 
 
 if __name__ == "__main__":
