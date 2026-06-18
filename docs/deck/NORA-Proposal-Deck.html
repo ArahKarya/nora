@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>NORA — Proposal Deck</title>
+<style>
+@page { size: 1280px 720px; margin: 0; }
+* { margin:0; padding:0; box-sizing:border-box; }
+:root{
+  --navy:#0F3460; --teal:#16C79A; --midnight:#16213E; --amber:#F0A500;
+  --ink:#1a1a2e; --mut:#5a6678; --line:#e2e7ee; --bg:#f7f9fc; --white:#fff;
+}
+body{ font-family:'DejaVu Sans','Liberation Sans',sans-serif; color:var(--ink); }
+.slide{
+  width:1280px; height:720px; position:relative; overflow:hidden;
+  page-break-after:always; background:var(--white); display:flex; flex-direction:column;
+}
+.slide:last-child{ page-break-after:auto; }
+
+/* top accent bar + footer */
+.pad{ padding:64px 80px; flex:1; display:flex; flex-direction:column; }
+.kicker{ color:var(--teal); font-size:15px; font-weight:700; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; }
+h1.title{ font-size:46px; color:var(--navy); line-height:1.12; font-weight:800; }
+h2.sh{ font-size:34px; color:var(--navy); font-weight:800; line-height:1.15; }
+.foot{ position:absolute; bottom:26px; left:80px; right:80px; display:flex; justify-content:space-between; font-size:12px; color:var(--mut); border-top:1px solid var(--line); padding-top:12px; }
+.foot b{ color:var(--navy); }
+.num{ color:var(--teal); font-weight:700; }
+
+/* cover */
+.cover{ background:var(--midnight); color:#fff; justify-content:center; align-items:flex-start; }
+.cover .pad{ justify-content:center; }
+.brandrow{ display:flex; align-items:center; gap:18px; margin-bottom:36px; }
+.logo{ width:74px; height:74px; }
+.cover h1{ font-size:78px; font-weight:800; letter-spacing:1px; }
+.cover .ttl{ color:var(--teal); font-size:22px; font-weight:600; letter-spacing:4px; text-transform:uppercase; margin-top:8px; }
+.cover .tag{ font-size:26px; color:#c5d0e0; margin-top:30px; font-style:italic; }
+.cover .meta{ margin-top:50px; font-size:16px; color:#8fa0bb; line-height:1.9; }
+.cover .by{ position:absolute; bottom:54px; right:80px; text-align:right; }
+.cover .by .lbl{ font-size:12px; color:#8fa0bb; letter-spacing:2px; text-transform:uppercase; }
+.cover .by .org{ font-size:22px; color:#fff; font-weight:700; margin-top:4px; }
+.cover .by .org span{ color:var(--teal); }
+.collab{ position:absolute; top:54px; right:80px; font-size:14px; color:#8fa0bb; letter-spacing:2px; }
+.collab b{ color:#fff; }
+
+/* generic content */
+.lead{ font-size:21px; color:var(--mut); line-height:1.6; margin-top:18px; max-width:980px; }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:34px; }
+.grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:34px; }
+.card{ background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:26px 26px; }
+.card .ic{ font-size:30px; }
+.card h3{ color:var(--navy); font-size:20px; margin:10px 0 8px; }
+.card p{ color:var(--mut); font-size:15px; line-height:1.55; }
+.card.teal{ border-top:4px solid var(--teal); }
+.card.navy{ border-top:4px solid var(--navy); }
+
+ul.feat{ margin-top:26px; list-style:none; }
+ul.feat li{ font-size:19px; padding:13px 0 13px 38px; position:relative; color:var(--ink); border-bottom:1px solid var(--line); }
+ul.feat li:before{ content:"✓"; position:absolute; left:0; color:var(--teal); font-weight:800; font-size:20px; }
+ul.feat li b{ color:var(--navy); }
+
+table.cmp{ width:100%; border-collapse:collapse; margin-top:30px; font-size:16px; }
+table.cmp th{ background:var(--navy); color:#fff; padding:13px 16px; text-align:left; }
+table.cmp th:first-child{ border-radius:8px 0 0 0; }
+table.cmp th:last-child{ border-radius:0 8px 0 0; }
+table.cmp td{ padding:12px 16px; border-bottom:1px solid var(--line); color:var(--ink); }
+table.cmp tr:nth-child(even) td{ background:var(--bg); }
+table.cmp .x{ color:#c0392b; font-weight:700; }
+table.cmp .ok{ color:var(--teal); font-weight:700; }
+
+/* flow */
+.flow{ display:flex; align-items:stretch; gap:0; margin-top:46px; }
+.step{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:20px 16px; text-align:center; position:relative; }
+.step .n{ width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin:0 auto 12px;font-size:16px; }
+.step h4{ color:var(--navy); font-size:16px; margin-bottom:6px; }
+.step p{ color:var(--mut); font-size:13px; line-height:1.4; }
+.arrow{ display:flex; align-items:center; color:var(--teal); font-size:26px; padding:0 6px; font-weight:800; }
+
+/* arch */
+.layers{ margin-top:30px; }
+.layer{ display:flex; align-items:center; gap:22px; background:var(--bg); border-left:5px solid var(--teal); border-radius:0 12px 12px 0; padding:18px 26px; margin-bottom:14px; }
+.layer .ln{ font-size:13px; color:var(--teal); font-weight:700; letter-spacing:1px; min-width:78px; }
+.layer .lt{ font-size:18px; color:var(--navy); font-weight:700; }
+.layer .ld{ font-size:14px; color:var(--mut); margin-left:auto; text-align:right; max-width:540px; }
+
+/* stat row */
+.stats{ display:flex; gap:30px; margin-top:40px; }
+.stat{ flex:1; text-align:center; background:var(--midnight); color:#fff; border-radius:14px; padding:30px 16px; }
+.stat .big{ font-size:46px; font-weight:800; color:var(--teal); }
+.stat .lbl{ font-size:14px; color:#c5d0e0; margin-top:8px; }
+
+/* roadmap */
+.phase{ display:flex; gap:18px; margin-top:24px; }
+.pcol{ flex:1; background:var(--bg); border-radius:12px; padding:22px; border-top:4px solid var(--navy); }
+.pcol.active{ border-top-color:var(--teal); }
+.pcol .pn{ color:var(--teal); font-weight:700; font-size:13px; letter-spacing:1px; }
+.pcol h4{ color:var(--navy); font-size:18px; margin:6px 0 12px; }
+.pcol li{ font-size:13.5px; color:var(--mut); margin:6px 0; list-style:none; padding-left:16px; position:relative; }
+.pcol li:before{ content:"›"; position:absolute; left:0; color:var(--teal); font-weight:700; }
+
+.closing{ background:var(--midnight); color:#fff; }
+.closing .pad{ justify-content:center; }
+.closing h1{ font-size:54px; color:#fff; font-weight:800; }
+.closing .tag{ color:var(--teal); font-size:24px; margin-top:20px; font-style:italic; }
+.closing .meta{ margin-top:44px; font-size:17px; color:#8fa0bb; line-height:1.9; }
+</style>
+</head>
+<body>
+
+<!-- 1 COVER -->
+<section class="slide cover">
+  <div class="collab">KOLABORASI · <b>NOZ</b> × <b>ARAH KARYA SINERGI</b></div>
+  <div class="pad">
+    <div class="brandrow">
+      <svg class="logo" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="46" stroke="#16C79A" stroke-width="3" opacity="0.5"/>
+        <circle cx="50" cy="50" r="32" stroke="#16C79A" stroke-width="2" opacity="0.3"/>
+        <path d="M30 70 V30 L70 70 V30" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="50" cy="50" r="5" fill="#16C79A"/>
+      </svg>
+      <div>
+        <h1>NORA</h1>
+        <div class="ttl">Network Oracle for Reliable Answers</div>
+      </div>
+    </div>
+    <div class="tag">"Reliable answers, grounded in the spec."</div>
+    <div class="meta">
+      AI Research Engine untuk Standar Telekomunikasi 3GPP<br>
+      Proposal Produk &amp; Arsitektur Teknis · Juni 2026
+    </div>
+  </div>
+  <div class="by">
+    <div class="lbl">Disiapkan oleh</div>
+    <div class="org">PT Arah Karya <span>Sinergi</span></div>
+  </div>
+</section>
+
+<!-- 2 MASALAH -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Masalah</div>
+    <h2 class="sh">Engineer telco tenggelam dalam ribuan halaman spec</h2>
+    <p class="lead">Standar 3GPP adalah "kitab hukum" jaringan seluler — resmi, wajib dipatuhi, dan sangat tebal. Mencari satu jawaban teknis bisa makan berjam-jam.</p>
+    <div class="grid3">
+      <div class="card navy"><div class="ic">📚</div><h3>Volume masif</h3><p>TS 24.008 saja punya 257 versi rilis, masing-masing ratusan halaman. Cari manual = lambat.</p></div>
+      <div class="card navy"><div class="ic">🤖</div><h3>LLM umum ngarang</h3><p>ChatGPT menjawab dari ingatan — sering halusinasi pada detail teknis (section, IE, prosedur).</p></div>
+      <div class="card navy"><div class="ic">🔍</div><h3>Tak terlacak</h3><p>Jawaban tanpa sumber tidak bisa diverifikasi. Untuk standar regulasi, ini tidak dapat diterima.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">02</span></div>
+</section>
+
+<!-- 3 SOLUSI -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Solusi</div>
+    <h2 class="sh">NORA — jawaban yang selalu bersumber dari spec resmi</h2>
+    <p class="lead">Tanya pakai bahasa biasa. NORA mencari spec relevan, menyusun jawaban, <b>memverifikasinya dengan model kedua</b>, lalu mengembalikan jawaban + tingkat keyakinan + sumber.</p>
+    <ul class="feat">
+      <li><b>Anti-halusinasi</b> — jawaban wajib tergrounded pada spec 3GPP resmi (RAG)</li>
+      <li><b>Self-validating</b> — model Verifier mengecek jawaban Generator sebelum dikirim</li>
+      <li><b>Auditable</b> — tiap jawaban punya confidence score + referensi section spec</li>
+      <li><b>Engine-agnostic</b> — cloud (9router) atau lokal (Ollama), satu arsitektur</li>
+    </ul>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">03</span></div>
+</section>
+
+<!-- 4 INPUT OUTPUT -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Cara Kerja</div>
+    <h2 class="sh">Satu pertanyaan masuk, satu jawaban terverifikasi keluar</h2>
+    <div class="grid2">
+      <div class="card teal">
+        <div class="ic">⌨️</div><h3>INPUT — Pertanyaan natural</h3>
+        <p style="font-size:16px;font-style:italic;color:var(--ink)">"Jelaskan prosedur Attach Request di TS 24.008 dan bandingkan dengan Registration di 5G."</p>
+      </div>
+      <div class="card teal">
+        <div class="ic">📋</div><h3>OUTPUT — Jawaban terstruktur</h3>
+        <p style="font-family:monospace;font-size:14px;color:var(--navy);line-height:1.7">{<br>&nbsp;&nbsp;"answer": "Prosedur dimulai saat MS...",<br>&nbsp;&nbsp;"confidence": 0.87,<br>&nbsp;&nbsp;"sources": ["TS 24.008 §4.7.3"]<br>}</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:30px">Bedanya dengan chatbot biasa: NORA <b>menunjuk sumber</b> dan <b>menolak menjawab</b> jika spec tidak mendukung.</p>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">04</span></div>
+</section>
+
+<!-- 5 PIPELINE -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Pipeline</div>
+    <h2 class="sh">RAG + Dual-Model + Validasi</h2>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><h4>Retrieve</h4><p>Cari potongan spec paling relevan dari vector DB</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">2</div><h4>Generate</h4><p>Opus menyusun jawaban dari konteks spec</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">3</div><h4>Verify</h4><p>Sonnet menilai: VALID / PARTIAL / INVALID</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">4</div><h4>Validate</h4><p>Hitung confidence, tolak klaim tak bersumber</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">5</div><h4>Answer</h4><p>Jawaban + confidence + sumber</p></div>
+    </div>
+    <p class="lead" style="margin-top:38px">Jika Verifier menilai <b>INVALID</b>, sistem otomatis mengulang (regenerate) — loop verifikasi inilah inti keandalan NORA.</p>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">05</span></div>
+</section>
+
+<!-- 6 ARSITEKTUR -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Arsitektur</div>
+    <h2 class="sh">Hermes Agent sebagai otak orkestrasi</h2>
+    <div class="layers">
+      <div class="layer"><span class="ln">FRONTEND</span><span class="lt">Next.js Dashboard</span><span class="ld">Login, chat query, lihat jawaban + sumber + confidence</span></div>
+      <div class="layer"><span class="ln">BACKEND</span><span class="lt">FastAPI</span><span class="ld">REST API — auth, query, ingest; memanggil Hermes core</span></div>
+      <div class="layer"><span class="ln">OTAK</span><span class="lt">Hermes Agent (embedded)</span><span class="ld">Orkestrasi: retrieve → generate → verify → validate → loop</span></div>
+      <div class="layer"><span class="ln">ENGINE</span><span class="lt">9router · Opus + Sonnet</span><span class="ld">Generator (Opus) + Verifier (Sonnet) — swap ke Ollama lokal</span></div>
+      <div class="layer"><span class="ln">DATA</span><span class="lt">ChromaDB + nomic-embed</span><span class="ld">Vector store 257 versi TS 24.008, embedding lokal</span></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">06</span></div>
+</section>
+
+<!-- 7 KNOWLEDGE BASE -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Knowledge Base</div>
+    <h2 class="sh">TS 24.008 — terindeks penuh</h2>
+    <p class="lead">Mobile radio interface Layer 3: Mobility Management, GPRS MM, Call Control, Session Management. Seluruh sejarah rilis dari R98 hingga R18.</p>
+    <div class="stats">
+      <div class="stat"><div class="big">257</div><div class="lbl">versi rilis terkumpul</div></div>
+      <div class="stat"><div class="big">1999–2026</div><div class="lbl">rentang tahun spec</div></div>
+      <div class="stat"><div class="big">778<span style="font-size:24px">MB</span></div><div class="lbl">dokumen sumber resmi</div></div>
+      <div class="stat"><div class="big">100%</div><div class="lbl">lokal &amp; auditable</div></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">07</span></div>
+</section>
+
+<!-- 8 PERBANDINGAN -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Pembeda</div>
+    <h2 class="sh">Pipeline statis vs NORA berorkestrasi</h2>
+    <table class="cmp">
+      <tr><th>Aspek</th><th>Pendekatan dasar</th><th>NORA + Hermes</th></tr>
+      <tr><td>Keandalan jawaban</td><td class="x">Single model, rawan ngarang</td><td class="ok">Generator + Verifier + validasi</td></tr>
+      <tr><td>Sumber</td><td class="x">Sering tanpa referensi</td><td class="ok">Selalu sebut section spec</td></tr>
+      <tr><td>Antarmuka</td><td class="x">CLI / script manual</td><td class="ok">Dashboard web + (opsi) Telegram</td></tr>
+      <tr><td>Update spec</td><td class="x">Manual</td><td class="ok">Terjadwal via cron Hermes</td></tr>
+      <tr><td>Engine</td><td class="x">Terkunci satu model</td><td class="ok">Cloud ↔ lokal, swappable</td></tr>
+      <tr><td>Privacy</td><td class="ok">Lokal</td><td class="ok">Lokal penuh (mode Ollama)</td></tr>
+    </table>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">08</span></div>
+</section>
+
+<!-- 9 STACK -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Teknologi</div>
+    <h2 class="sh">Stack ringan, jalan di Raspberry Pi 5</h2>
+    <div class="grid3">
+      <div class="card teal"><div class="ic">🧠</div><h3>Engine AI</h3><p>9router → Claude Opus (Generator) + Sonnet (Verifier). Swap ke Ollama (Llama3.1/Qwen) untuk lokal penuh.</p></div>
+      <div class="card teal"><div class="ic">🗄️</div><h3>Vector & Embedding</h3><p>ChromaDB embedded + nomic-embed-text lokal. Hemat, cepat, data tidak keluar host.</p></div>
+      <div class="card teal"><div class="ic">⚙️</div><h3>Orkestrasi</h3><p>Hermes Agent — memory, skills, subagent paralel, cron auto-reindex.</p></div>
+      <div class="card teal"><div class="ic">🖥️</div><h3>Aplikasi</h3><p>FastAPI backend + Next.js dashboard. Multi-user, auth, logging.</p></div>
+      <div class="card teal"><div class="ic">🐳</div><h3>Deploy</h3><p>Docker Compose di RPi5 8GB. Reproducible, ringan.</p></div>
+      <div class="card teal"><div class="ic">🔒</div><h3>Akses Aman</h3><p>Cloudflare Tunnel — remote tanpa membuka port. Akses dari mana saja.</p></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">09</span></div>
+</section>
+
+<!-- 10 ROADMAP -->
+<section class="slide">
+  <div class="pad">
+    <div class="kicker">Roadmap</div>
+    <h2 class="sh">Dari fondasi RAG ke produk SaaS</h2>
+    <div class="phase">
+      <div class="pcol active"><div class="pn">FASE 1</div><h4>RAG Core</h4><li>Chunk per-section</li><li>Embed 257 versi</li><li>Index ChromaDB</li><li>Query CLI dasar</li></div>
+      <div class="pcol"><div class="pn">FASE 2</div><h4>Dual-Model</h4><li>Generator + Verifier</li><li>Validation + confidence</li><li>Hermes orkestrasi</li><li>Loop verifikasi</li></div>
+      <div class="pcol"><div class="pn">FASE 3</div><h4>SaaS Platform</h4><li>FastAPI + auth</li><li>Next.js dashboard</li><li>Logging + feedback</li><li>Multi-user</li></div>
+      <div class="pcol"><div class="pn">FASE 4</div><h4>Production</h4><li>Docker Compose</li><li>Cloudflare Tunnel</li><li>Cron auto-reindex</li><li>Monitoring</li></div>
+    </div>
+    <p class="lead" style="margin-top:30px">Knowledge base sudah terkumpul. Fase 1 siap dieksekusi.</p>
+  </div>
+  <div class="foot"><span><b>NORA</b> · Network Oracle for Reliable Answers</span><span class="num">10</span></div>
+</section>
+
+<!-- 11 CLOSING -->
+<section class="slide closing">
+  <div class="collab">KOLABORASI · <b>NOZ</b> × <b>ARAH KARYA SINERGI</b></div>
+  <div class="pad">
+    <h1>Mari bangun NORA.</h1>
+    <div class="tag">"Reliable answers, grounded in the spec."</div>
+    <div class="meta">
+      Knowledge base 3GPP siap · Arsitektur terdefinisi · Fase 1 siap jalan.<br>
+      Engine telco AI yang akurat, terverifikasi, dan dapat ditelusuri.
+    </div>
+  </div>
+  <div class="by" style="position:absolute;bottom:54px;right:80px;text-align:right">
+    <div class="lbl" style="font-size:12px;color:#8fa0bb;letter-spacing:2px;text-transform:uppercase">Disiapkan oleh</div>
+    <div class="org" style="font-size:22px;color:#fff;font-weight:700;margin-top:4px">PT Arah Karya <span style="color:var(--teal)">Sinergi</span></div>
+  </div>
+</section>
+
+</body>
+</html>

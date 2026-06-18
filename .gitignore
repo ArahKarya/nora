@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# NORA runtime data (regenerable)
+backend/data/
+backend/logs/
+*.log
+
+# 3GPP knowledge base (besar, di luar repo)
+data/3gpp/
+
+# Env / secrets
+.env
+*.key
+
+# OS
+.DS_Store
