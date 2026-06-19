@@ -1,5 +1,5 @@
 """NORA — orchestrator: query → retrieve → generate → verify → validate (PRD §8.6).
-Ini 'otak' yang nantinya dibungkus Hermes / dipanggil FastAPI."""
+Ini 'otak' yang dipanggil FastAPI sebagai service internal NORA."""
 from __future__ import annotations
 import uuid
 from ..rag.store import retrieve

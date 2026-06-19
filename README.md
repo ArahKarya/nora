@@ -9,14 +9,14 @@
 [![License](https://img.shields.io/badge/License-MIT-0F3460?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![RAG](https://img.shields.io/badge/RAG-ChromaDB-FF6F61?style=flat-square)](https://www.trychroma.com/)
-[![Engine](https://img.shields.io/badge/Orkestrasi-Hermes%20Agent-7B2FBF?style=flat-square)](https://hermes-agent.nousresearch.com/)
+[![Engine](https://img.shields.io/badge/Engine-NORA%20Agent%20Layer-7B2FBF?style=flat-square)]()
 
 </div>
 
 > SaaS AI Research Engine **multi-topik** untuk standar telekomunikasi.
 > Kolaborasi **NOZ × PT Arah Karya Sinergi**.
 
-Jawaban teknis telco yang **tergrounded pada spec resmi** (anti-halusinasi), dengan **confidence score** dan **sumber per-section** — diorkestrasi oleh **Hermes Agent**, ditenagai **dual-model** (Opus generator + Sonnet verifier).
+Jawaban teknis telco yang **tergrounded pada spec resmi** (anti-halusinasi), dengan **confidence score** dan **sumber per-section** — diorkestrasi oleh **NORA Agent Layer** mandiri, ditenagai **dual-model** (Opus generator + Sonnet verifier).
 
 NORA adalah **platform multi-topik**: tiap **Topik** = knowledge base standar telco independen (collection sendiri, metode RAG identik). User pilih Topik → bertanya. **Topik pertama yang live: 3GPP TS 24.008.**
 
@@ -65,7 +65,7 @@ Nambah Topik baru = registrasi metadata + ingest knowledge base. **Tanpa ubah ko
 ## 🏛️ Arsitektur
 
 ```
-Next.js Dashboard  ──REST──►  FastAPI Backend  ──►  Hermes Core (orkestrasi)
+Next.js Dashboard  ──REST──►  FastAPI Backend  ──►  NORA Agent Layer (orkestrasi)
   (pilih Topik)                                      ├─ Topic Registry (3GPP / ITU-T / ...)
                                                      ├─ ChromaDB (1 collection per Topik)
                                                      ├─ Embedding: Gemini (via 9router, dim 3072)
@@ -169,5 +169,5 @@ Produksi expose lewat **Cloudflare tunnel** → [nora.arahkarya.com](https://nor
 ---
 
 <div align="center">
-<sub>© 2026 PT Arah Karya Sinergi × NOZ — dibangun dengan Hermes Agent</sub>
+<sub>© 2026 PT Arah Karya Sinergi × NOZ</sub>
 </div>

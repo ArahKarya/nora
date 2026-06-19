@@ -8,7 +8,7 @@
 | **Kolaborasi** | NOZ × PT Arah Karya Sinergi |
 | **Versi** | 0.2 (Draft) |
 | **Tanggal** | Juni 2026 |
-| **Disiapkan oleh** | Hermes Arah (ArahKarya) |
+| **Disiapkan oleh** | Tim ArahKarya |
 | **Dokumen induk** | `BRD-NORA.md` |
 
 ---
@@ -144,7 +144,7 @@ NORA adalah **platform multi-topik**: user memilih **Topik** (knowledge base sta
 - [ ] AC-F8-2: Pipeline identik untuk kedua mode.
 
 ### F9 — `[POST-MVP]` Telegram Gateway
-**Deskripsi:** Query NORA via Telegram lewat Hermes gateway.
+**Deskripsi:** Query NORA via Telegram lewat gateway NORA.
 
 ---
 
@@ -321,7 +321,7 @@ Daftar Topik tersedia.
 - `< 0.7` → flag LOW CONFIDENCE.
 
 ### 8.6 NORA Agent Layer (Orkestrasi)
-- Agent layer **mandiri** (kode NORA, bukan embed Hermes runtime) dipanggil backend sebagai service/library.
+- Agent layer **mandiri** (kode NORA murni) dipanggil backend sebagai service/library.
 - Menjalankan: retrieve → generate → verify → validate → loop.
 - **Multi-tenant**: stateless-per-request, memory & history per-user di Postgres → scalable.
 - `[POST-MVP]` reasoning multi-step untuk cross-version/cross-Topik; background worker auto-reindex.
@@ -358,7 +358,7 @@ Daftar Topik tersedia.
 - 9router tersedia & punya kuota Opus + Sonnet (Generator + Verifier = 2 call/query).
 - Embedding tersedia (9router Gemini `gemini-embedding-001`, atau lokal fastembed).
 - Knowledge base Topik (.txt) sudah ter-convert.
-- **NORA Agent Layer** = kode internal NORA (bukan dependensi Hermes runtime).
+- **NORA Agent Layer** = kode internal NORA murni.
 - ChromaDB (demo) / Qdrant (produksi) + PostgreSQL (state) + Docker tersedia di RPi5/VPS.
 
 ---
@@ -385,7 +385,7 @@ Daftar Topik tersedia.
 
 ---
 
-*Dokumen ini disiapkan oleh Hermes Arah untuk kolaborasi NOZ × PT Arah Karya Sinergi · Juni 2026*
+*Dokumen ini disiapkan oleh Tim ArahKarya untuk kolaborasi NOZ × PT Arah Karya Sinergi · Juni 2026*
 
 ---
 

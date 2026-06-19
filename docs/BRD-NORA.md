@@ -8,7 +8,7 @@
 | **Kolaborasi** | NOZ (Telecom Security Research) × PT Arah Karya Sinergi |
 | **Versi dokumen** | 0.2 (Draft) |
 | **Tanggal** | Juni 2026 |
-| **Disiapkan oleh** | Hermes Arah (ArahKarya) |
+| **Disiapkan oleh** | Tim ArahKarya |
 | **Status** | Draft — menunggu review |
 
 ---
@@ -19,7 +19,7 @@ NORA adalah **platform AI Research Engine berbasis RAG** yang menjawab pertanyaa
 
 NORA dirancang **multi-topik**: tiap **Topik** adalah knowledge base independen (mis. 3GPP TS 24.008, 3GPP TS 23.501, ITU-T, IEEE 802.x, GSMA) dengan metode RAG yang **identik**. User memilih Topik sebelum bertanya, dan sistem mengarahkan query ke knowledge base Topik tersebut. **Topik pertama** yang diimplementasi & terbukti adalah **3GPP TS 24.008** (reference implementation).
 
-Berbeda dengan chatbot LLM umum yang menjawab dari ingatan dan rawan ngarang, NORA memakai arsitektur **RAG + dual-model (Generator → Verifier) + validation layer**, diorkestrasi oleh **NORA Agent Layer** — agent engine mandiri milik NORA (terinspirasi pola Hermes: retrieve → reason → verify → loop + memory per-user), dibangun **multi-tenant** untuk skala SaaS banyak user.
+Berbeda dengan chatbot LLM umum yang menjawab dari ingatan dan rawan ngarang, NORA memakai arsitektur **RAG + dual-model (Generator → Verifier) + validation layer**, diorkestrasi oleh **NORA Agent Layer** — agent engine mandiri milik NORA (pola retrieve → reason → verify → loop + memory per-user), dibangun **multi-tenant** untuk skala SaaS banyak user.
 
 **Engine default:** API cloud via **9router (Claude Opus generator + Sonnet verifier)**. **Mode lokal:** dapat di-swap ke **Ollama** tanpa mengubah arsitektur — privacy-first opsional.
 
@@ -77,7 +77,7 @@ NORA mengingesti **spec resmi** (per Topik) ke vector database, lalu menjawab de
 |---|---|---|
 | Owner produk | NOZ + ArahKarya | Arah produk & strategi |
 | Domain expert | NOZ (Tri Sumarno) | Validasi akurasi telco, sumber spec |
-| Engineering | ArahKarya (Hermes Arah) | Build, deploy, maintain |
+| Engineering | ArahKarya (Tim ArahKarya) | Build, deploy, maintain |
 | End user | Network/telco engineer | Query spec, riset teknis |
 
 ### Persona Utama
@@ -124,17 +124,17 @@ NORA adalah **engine RAG generik** yang melayani banyak knowledge base. Tiap kno
 
 ## 4B. NORA Agent Layer (Engine Orkestrasi Mandiri)
 
-NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang mengorkestrasi reasoning multi-step. Layer ini **milik NORA sendiri** (bukan instance Hermes yang di-embed), terinspirasi pola Hermes Agent namun **dirancang multi-tenant untuk SaaS**.
+NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang mengorkestrasi reasoning multi-step. Layer ini **milik NORA sendiri** sepenuhnya, **dirancang multi-tenant untuk SaaS**.
 
-### Kenapa agent layer sendiri (bukan embed Hermes runtime)
-| Kebutuhan SaaS | Hermes runtime apa adanya | NORA Agent Layer |
+### Kenapa agent layer sendiri (kode NORA murni)
+| Kebutuhan SaaS | Runtime generik apa adanya | NORA Agent Layer |
 |---|---|---|
 | Banyak user paralel | 1 session/profil, stateful | ✅ Stateless-per-request, state di DB |
 | Isolasi data per-user | Memory global per profil | ✅ Memory & history per-user (Postgres) |
 | Scale horizontal | Proses stateful tunggal | ✅ Replica di banyak server |
 | Deploy & pindah server | Bundel runtime berat | ✅ Container ringan, DB terpisah |
 
-> Hermes dipakai sebagai **inspirasi pola + tool pengembangan**, bukan runtime produksi. Yang berharga (loop retrieve→generate→verify→validate, dual-model, memory) di-implementasi sebagai kode NORA yang multi-tenant.
+> Pola agent (loop retrieve→generate→verify→validate, dual-model, memory) di-implementasi sebagai kode NORA yang multi-tenant.
 
 ### Tanggung jawab Agent Layer
 1. **Orkestrasi pipeline**: retrieve → generate (Opus) → verify (Sonnet) → validate → loop jika INVALID.
@@ -220,7 +220,7 @@ NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang m
 | ID | Requirement | Prioritas |
 |---|---|---|
 | FR-ORC-001 | Agent Layer MUST jadi orchestration core: retrieve → generate → verify → validate → loop | MUST |
-| FR-ORC-002 | Agent Layer MUST dipanggil backend sebagai service/library internal (bukan embed Hermes runtime) | MUST |
+| FR-ORC-002 | Agent Layer MUST dipanggil backend sebagai service/library internal (kode NORA murni, bukan runtime generik) | MUST |
 | FR-ORC-003 | Agent Layer MUST stateless-per-request; state durable (memory, history) di Postgres → scalable | MUST |
 | FR-ORC-004 | Agent Layer MUST isolasi memory & history per-user (multi-tenant) | MUST |
 | FR-ORC-005 | Agent Layer SHOULD reasoning multi-step untuk query kompleks lintas-versi/lintas-Topik | SHOULD |
@@ -298,10 +298,10 @@ NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang m
 ### Data Flow (1 query)
 ```
 1. User kirim query (dashboard/Telegram)
-2. Backend → Hermes core
-3. Hermes: embed query → ChromaDB retrieve top-5 chunk
-4. Hermes: bangun prompt [Sys][Context][Query] → Generator (Opus)
-5. Hermes: jawaban → Verifier (Opus) → VALID/PARTIAL/INVALID
+2. Backend → NORA Agent Layer
+3. Agent: embed query → ChromaDB retrieve top-5 chunk
+4. Agent: bangun prompt [Sys][Context][Query] → Generator (Opus)
+5. Agent: jawaban → Verifier (Opus) → VALID/PARTIAL/INVALID
 6. Jika INVALID → loop ke step 4 (maks 2x)
 7. Validation layer: cross-check + confidence score
 8. Output {answer, confidence, sources} → backend → user
@@ -354,7 +354,7 @@ NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang m
 ### Fase 2 — Dual-Model + Validation
 - Pipeline Generator + Verifier (loop)
 - Validation layer + confidence score
-- Hermes sebagai orchestration core
+- NORA Agent Layer sebagai orchestration core
 
 ### Fase 3 — SaaS Platform + Multi-Topik
 - FastAPI backend + auth + query/ingest API
@@ -363,7 +363,7 @@ NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang m
 - Logging + feedback
 
 ### Fase 4 — Production
-- Docker Compose (backend + Chroma + Hermes)
+- Docker Compose (backend + Chroma + Agent Layer)
 - Cloudflare Tunnel
 - (Opsional) cron auto-reindex, engine swap Ollama, subagent lintas-versi
 
@@ -396,9 +396,9 @@ NORA bukan sekadar pipeline RAG statis, melainkan **agent layer mandiri** yang m
 ## 13. Lampiran
 
 - **Referensi sumber:** Tri Sumarno, *"Empowering Local AI with Deep Telco Knowledge"* (LinkedIn, 14 Jun 2026)
-- **Dokumen terkait:** `Technical Requirements — Reliable AI Research Engine` (Tri Sumarno), `3GPP RAG + Hermes Implementation Guide` (Hermes Arah)
+- **Dokumen terkait:** `Technical Requirements — Reliable AI Research Engine` (Tri Sumarno), `3GPP RAG Implementation Guide` (Tim ArahKarya)
 - **Spec sumber:** 3GPP TS 24.008 — https://www.3gpp.org/ftp/Specs/archive/24_series/24.008
 
 ---
 
-*Dokumen ini disiapkan oleh Hermes Arah untuk kolaborasi NOZ × PT Arah Karya Sinergi · Juni 2026*
+*Dokumen ini disiapkan oleh Tim ArahKarya untuk kolaborasi NOZ × PT Arah Karya Sinergi · Juni 2026*
