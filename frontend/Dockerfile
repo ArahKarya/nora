@@ -1,6 +1,6 @@
 # NORA frontend — multi-stage build
 # Build-time API URL via ARG (baked into client bundle).
-ARG NEXT_PUBLIC_API_URL=http://localhost:8010
+ARG NEXT_PUBLIC_API_URL=
 
 # ---- deps ----
 FROM node:20-alpine AS deps

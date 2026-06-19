@@ -1,8 +1,9 @@
 // API client NORA — cookie auth (credentials: include).
-// Base dari NEXT_PUBLIC_API_URL, default http://localhost:8010.
+// Base dari NEXT_PUBLIC_API_URL. Default "" = path relatif (same-origin),
+// CF tunnel route /api/* ke backend. Set absolute URL hanya utk dev lokal.
 
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8010";
+  process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export interface User {
   id: string;
