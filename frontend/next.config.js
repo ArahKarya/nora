@@ -14,6 +14,8 @@ const securityHeaders = [
       "img-src 'self' data:",
       "connect-src 'self'",
       "font-src 'self'",
+      "worker-src 'self'",
+      "manifest-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -26,7 +28,16 @@ const nextConfig = {
   output: "standalone",
   poweredByHeader: false, // hapus header X-Powered-By: Next.js (bocor stack)
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        // SW jangan ke-cache lama di CDN/browser → update SW tidak ketahan.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+        ],
+      },
+    ];
   },
   async rewrites() {
     // Proxy /api/* ke backend (internal docker network).
