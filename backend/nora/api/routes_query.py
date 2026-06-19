@@ -44,10 +44,22 @@ def query(
 
     # call orchestrator (reads ChromaDB via store/config)
     from ..pipeline.orchestrator import answer_query
+    from ..pipeline.reason import LLMUnavailable
 
-    result = answer_query(
-        body.message, top_k=body.top_k, version_filter=body.version_filter
-    )
+    try:
+        result = answer_query(
+            body.message, top_k=body.top_k, version_filter=body.version_filter
+        )
+    except LLMUnavailable as e:
+        raise HTTPException(
+            status_code=503,
+            detail="Model AI sedang sibuk/overload. Coba lagi sebentar lagi.",
+        ) from e
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(
+            status_code=502,
+            detail=f"Gagal memproses pertanyaan: {type(e).__name__}",
+        ) from e
 
     # persist user msg + assistant msg
     user_msg = Message(session_id=session.id, role="user", content=body.message)

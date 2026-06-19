@@ -66,16 +66,33 @@ class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeoutMs = 150_000
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
+      signal: ctrl.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    if (e instanceof DOMException && e.name === "AbortError") {
+      throw new ApiError(
+        408,
+        "Permintaan timeout — model AI mungkin sedang sibuk. Coba lagi."
+      );
+    }
+    throw new ApiError(0, "Gagal terhubung ke server. Periksa koneksi.");
+  }
+  clearTimeout(timer);
 
   if (!res.ok) {
     let msg = `Request gagal (${res.status})`;
