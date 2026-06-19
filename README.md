@@ -42,7 +42,7 @@ Nambah Topik baru = registrasi metadata + ingest knowledge base. **Tanpa ubah ko
 | Login | Workspace |
 |---|---|
 | ![Login](docs/screenshots/01-login.png) | ![Workspace](docs/screenshots/02-app-shell.png) |
-| Auth per-user (JWT, httpOnly cookie) | Layout 3-kolom: **Topik · Chat · Sumber** |
+| Split-panel · auth per-user (JWT, httpOnly cookie) | Layout 3-kolom: **Topik · Chat · Sumber** |
 
 **Jawaban tergrounded + panel sumber + confidence score:**
 
