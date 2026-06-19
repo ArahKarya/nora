@@ -27,10 +27,16 @@ OLLAMA_BASE_URL = os.getenv("NORA_OLLAMA_URL", "http://localhost:11434/v1")
 OLLAMA_GEN_MODEL = os.getenv("NORA_OLLAMA_GEN", "llama3.1:8b")
 
 # ---- Embedding ----
-# Default: cloud via 9router Gemini (ringan di RPi5). 'local' = fastembed ONNX (butuh RAM).
+# Backend embedding bisa dipilih via NORA_EMBED_BACKEND:
+#   "9router" (default) — Gemini via 9router (cloud, dim 3072). Kualitas terbaik.
+#   "ollama"            — Ollama lokal (offline, dim tergantung model: nomic=768, mxbai=1024).
+#   "local"             — fastembed ONNX (offline CPU, bge-small dim 384). Paling ringan.
+# PENTING: index & query WAJIB pakai backend+model embedding yang SAMA (dimensi vektor harus konsisten).
 EMBED_BACKEND = os.getenv("NORA_EMBED_BACKEND", "9router")
-EMBED_MODEL = os.getenv("NORA_EMBED_MODEL", "gemini/gemini-embedding-001")  # dim 3072
-EMBED_LOCAL_MODEL = os.getenv("NORA_EMBED_LOCAL_MODEL", "BAAI/bge-small-en-v1.5")
+EMBED_MODEL = os.getenv("NORA_EMBED_MODEL", "gemini/gemini-embedding-001")  # dim 3072 (9router)
+EMBED_LOCAL_MODEL = os.getenv("NORA_EMBED_LOCAL_MODEL", "BAAI/bge-small-en-v1.5")  # dim 384 (fastembed)
+# Ollama embedding (offline). nomic-embed-text=768 (rekomendasi), mxbai-embed-large=1024.
+EMBED_OLLAMA_MODEL = os.getenv("NORA_EMBED_OLLAMA_MODEL", "nomic-embed-text")
 
 # ChromaDB
 CHROMA_PATH = os.getenv("NORA_CHROMA_PATH", "/home/yay/apps/nora/backend/data/chroma")
@@ -65,17 +71,30 @@ def _get_embed_client():
 
 
 @lru_cache(maxsize=1)
+def _get_ollama_embed_client():
+    from openai import OpenAI
+    # Ollama expose endpoint OpenAI-compatible di /v1 (embeddings didukung).
+    return OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
+
+
+@lru_cache(maxsize=1)
 def _get_local_embedder():
     from fastembed import TextEmbedding
     return TextEmbedding(model_name=EMBED_LOCAL_MODEL)
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Batch embed. Default via 9router Gemini (cloud); fallback local fastembed."""
+    """Batch embed. Backend dipilih via NORA_EMBED_BACKEND: 9router (cloud) | ollama | local.
+    Index & query HARUS pakai backend+model sama (dimensi vektor konsisten)."""
     if EMBED_BACKEND == "local":
         model = _get_local_embedder()
         return [e.tolist() for e in model.embed(texts)]
-    # 9router Gemini (OpenAI-compatible embeddings endpoint)
+    if EMBED_BACKEND == "ollama":
+        # Ollama lokal (offline) via endpoint OpenAI-compatible.
+        client = _get_ollama_embed_client()
+        resp = client.embeddings.create(model=EMBED_OLLAMA_MODEL, input=texts)
+        return [d.embedding for d in resp.data]
+    # default: 9router Gemini (OpenAI-compatible embeddings endpoint)
     client = _get_embed_client()
     resp = client.embeddings.create(model=EMBED_MODEL, input=texts)
     return [d.embedding for d in resp.data]

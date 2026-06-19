@@ -43,6 +43,12 @@ services:
       NORA_ROUTER_KEY: ${NORA_ROUTER_KEY:-sk-local}
       NORA_CHROMA_PATH: ${NORA_CHROMA_PATH:-/app/data/chroma}
       NORA_COLLECTION: ${NORA_COLLECTION:-ts24008}
+      # Embedding backend: 9router (cloud Gemini) | ollama (lokal) | local (fastembed)
+      NORA_EMBED_BACKEND: ${NORA_EMBED_BACKEND:-9router}
+      NORA_EMBED_MODEL: ${NORA_EMBED_MODEL:-gemini/gemini-embedding-001}
+      NORA_EMBED_OLLAMA_MODEL: ${NORA_EMBED_OLLAMA_MODEL:-nomic-embed-text}
+      NORA_OLLAMA_URL: ${NORA_OLLAMA_URL:-http://host.docker.internal:11434/v1}
+      NORA_EMBED_LOCAL_MODEL: ${NORA_EMBED_LOCAL_MODEL:-BAAI/bge-small-en-v1.5}
     volumes:
       # ChromaDB existing (read-write; ingest host tetap nulis ke folder sama)
       - ./backend/data/chroma:/app/data/chroma
