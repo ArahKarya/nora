@@ -6,9 +6,15 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 
-SECRET_KEY = os.getenv("SECRET_KEY", "nora-dev-secret-change-me")
+_SECRET = os.getenv("SECRET_KEY")
+if not _SECRET:
+    raise RuntimeError(
+        "SECRET_KEY env wajib di-set (tidak ada default). "
+        "Generate: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
+SECRET_KEY: str = _SECRET
 ALGORITHM = "HS256"
-EXPIRE_DAYS = 7
+EXPIRE_DAYS = int(os.getenv("NORA_TOKEN_EXPIRE_DAYS", "1"))
 
 # bcrypt batas 72 byte — truncate manual (hindari ValueError di bcrypt 4.x).
 _MAX = 72

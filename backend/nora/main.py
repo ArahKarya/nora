@@ -16,7 +16,16 @@ CORS_ORIGINS = [
     if o.strip()
 ]
 
-app = FastAPI(title="NORA Backend", version="1.0.0")
+# Swagger/ReDoc dimatikan di produksi (repo public — kurangi attack surface).
+# Set NORA_ENABLE_DOCS=true utk dev.
+_docs_on = os.getenv("NORA_ENABLE_DOCS", "false").lower() == "true"
+app = FastAPI(
+    title="NORA Backend",
+    version="1.0.0",
+    docs_url="/docs" if _docs_on else None,
+    redoc_url="/redoc" if _docs_on else None,
+    openapi_url="/openapi.json" if _docs_on else None,
+)
 
 app.add_middleware(
     CORSMiddleware,

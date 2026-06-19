@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..auth.deps import get_current_user
@@ -15,9 +15,9 @@ router = APIRouter(prefix="/api", tags=["query"])
 
 class QueryIn(BaseModel):
     topic_id: str
-    message: str
+    message: str = Field(..., min_length=1, max_length=4000)
     session_id: str | None = None
-    top_k: int = 5
+    top_k: int = Field(5, ge=1, le=20)
     version_filter: str | None = None
 
 
