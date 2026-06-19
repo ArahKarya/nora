@@ -4,7 +4,8 @@
 
 **Reliable answers, grounded in the spec.**
 
-[![Status](https://img.shields.io/badge/Fase%201-Terbukti%20E2E-16C79A?style=flat-square)](https://github.com/ArahKarya/nora)
+[![Status](https://img.shields.io/badge/Production-Live-16C79A?style=flat-square)](https://nora.arahkarya.com)
+[![Stack](https://img.shields.io/badge/Next.js%2014%20%2B%20FastAPI-0F3460?style=flat-square)](https://github.com/ArahKarya/nora)
 [![License](https://img.shields.io/badge/License-MIT-0F3460?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![RAG](https://img.shields.io/badge/RAG-ChromaDB-FF6F61?style=flat-square)](https://www.trychroma.com/)
@@ -31,6 +32,23 @@ NORA adalah **platform multi-topik**: tiap **Topik** = knowledge base standar te
 | GSMA / O-RAN | ⚪ Planned | Operator & Open RAN |
 
 Nambah Topik baru = registrasi metadata + ingest knowledge base. **Tanpa ubah kode engine.**
+
+---
+
+## 📸 Tampilan
+
+> 🟢 **Live:** [nora.arahkarya.com](https://nora.arahkarya.com) — multi-tenant login, akses publik via Cloudflare tunnel.
+
+| Login | Workspace |
+|---|---|
+| ![Login](docs/screenshots/01-login.png) | ![Workspace](docs/screenshots/02-app-shell.png) |
+| Auth per-user (JWT, httpOnly cookie) | Layout 3-kolom: **Topik · Chat · Sumber** |
+
+**Jawaban tergrounded + panel sumber + confidence score:**
+
+![Jawaban & Sumber](docs/screenshots/03-query-answer.png)
+
+> Q: *"Apa itu prosedur GPRS Attach?"* → jawaban cite **§4.7.3.1**, **KEYAKINAN TINGGI 93%**, **VERIFIER: VALID**, 5 sumber dengan similarity score.
 
 ---
 
@@ -68,15 +86,20 @@ query → embed → retrieve top-K → Generator (Opus)
 
 ```
 nora/
-├── docs/                  # BRD, PRD, proposal deck (md + pdf)
+├── docs/
+│   ├── screenshots/       # tampilan UI (login, workspace, jawaban)
+│   └── *.md / *.pdf       # BRD, PRD, proposal deck
 ├── backend/
 │   └── nora/
 │       ├── ingest/        # chunk per-section + embed → ChromaDB
 │       ├── rag/           # retrieval + vector store
 │       ├── engine/        # LLM/embed adapter (9router default, ollama swap)
 │       ├── pipeline/      # orkestrasi: gen → verify → validate → loop
-│       └── api/           # FastAPI routes (Fase 2)
-└── frontend/              # Next.js dashboard (Fase 3)
+│       ├── auth/          # JWT + bcrypt (security.py)
+│       ├── db/            # SQLAlchemy models (Postgres, multi-tenant)
+│       └── api/           # FastAPI routes (auth, topics, query, sessions)
+├── frontend/              # Next.js 14 dashboard (auth context, sources panel)
+└── docker-compose.yml     # Postgres + backend + frontend
 ```
 
 ## ✅ Status
@@ -88,14 +111,15 @@ nora/
   - Embedding Gemini via 9router (dim 3072, RAM-aman)
   - Dual-model: Opus generator + Sonnet verifier
   - Confidence scoring + anti-halusinasi
-- [ ] Fase 2: API + auth (FastAPI)
-- [ ] Fase 3: SaaS dashboard (Next.js) + **multi-topik** (topic selector + registry)
-- [ ] Fase 4: production deploy
+- [x] **Fase 2 — API + auth** (FastAPI, JWT + bcrypt, multi-tenant)
+- [x] **Fase 3 — SaaS dashboard** (Next.js 14, topic selector, sources panel, confidence badge)
+- [x] **Fase 4 — Production deploy** 🚀 — Docker Compose (Postgres + backend + frontend), live di [nora.arahkarya.com](https://nora.arahkarya.com) via Cloudflare tunnel
+- [ ] Fase 5: multi-topik aktif (Topik #2+), reset password, Qdrant swap (opsional)
 
-### Bukti Fase 1
+### Bukti E2E (live)
 
 > **Q:** "Apa itu prosedur GPRS Attach?"
-> → jawaban teknis akurat, **confidence 0.91 VALID**, 5 sumber dengan §section.
+> → jawaban teknis akurat cite **§4.7.3.1**, **confidence 0.93 VALID**, 5 sumber dengan §section.
 >
 > **Q jebakan:** "Harga iPhone 17?"
 > → *"Informasi tidak ditemukan dalam spec."* — **menolak mengarang**.
@@ -128,6 +152,19 @@ python -m nora.ask "Apa itu prosedur GPRS Attach?"
 ```
 
 > **Catatan multi-topik:** CLI saat ini beroperasi pada Topik #1 (3GPP TS 24.008). Antarmuka `--topic` (registry + selector) menyusul di Fase 3 — lihat `docs/PRD-NORA.md` §F0 & §7 (API).
+
+### 🐳 Full-stack (Docker)
+
+```bash
+# 3 service: Postgres + FastAPI backend + Next.js frontend
+docker compose up -d --build
+
+# frontend  → http://localhost:3030  (proxy /api → backend, same-origin)
+# backend   → http://localhost:8010  (FastAPI, JWT auth)
+# postgres  → localhost:5440         (multi-tenant: user + session + history)
+```
+
+Produksi expose lewat **Cloudflare tunnel** → [nora.arahkarya.com](https://nora.arahkarya.com) (frontend `:3030`, request `/api/*` di-rewrite ke backend internal — 1 origin, cookie aman, tanpa CORS).
 
 ---
 
